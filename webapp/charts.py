@@ -126,35 +126,33 @@ def init_routes(app, get_db):
     @app.route("/charts/<string:logic_name>")
     def show_charts(logic_name):
         details_requested = request.args.get('details', default = False, type = bool)
+        virtual_requested = request.args.get('virtual', default = False, type = bool)
         dist_too_few = request.args.get('dist_too_few', default = None, type = (lambda x: None if x == "" else float(x)))
         min_common_benches = request.args.get('min_common_benches', default = 100, type = int)
         results = (
             read_database(logic_name)
+            #Remove duplicated results
             .group_by("ev_id","sovar_id","id").last()
             .with_columns(
-                bucket=pl.lit(10.0).pow(c_cpuTime.log(10).floor()),
                 solver=pl.concat_str(pl.col("fullName"), c_eval_name, separator=" ").cast(pl.Categorical),
                 # solver=pl.col("sovar_id")
             )
-        )
+        ).select(c_query,c_solver,c_ev_id,c_cpuTime,c_status,"solver_name","date")
+        
+        #Add virtual best
+        if virtual_requested:
+            virtual_best=results.group_by(c_query).agg(c_cpuTime.min()).with_columns(solver_name=pl.lit("Virtual Best").cast(pl.Categorical),solver=pl.lit("Virtual Best").cast(pl.Categorical),ev_id=pl.lit(-1).cast(pl.Int64),status=pl.lit("unknown").cast(pl.Categorical),date=pl.lit("now")).select(c_query,c_solver,c_ev_id,c_cpuTime,c_status,"solver_name","date")
+            results = pl.concat([results,virtual_best],how="vertical")
 
         results_with = results.select(
             c_query,
             solver2=c_solver,
             ev_id2=c_ev_id,
-            bucket2=c_bucket,
             cpuTime2=c_cpuTime,
             status2=c_status,
         )
 
         cross_results = results.join(results_with, on=[c_query], how="inner")
-
-        corr = (
-            cross_results.group_by(c_solver, c_solver2)
-            .agg(corr=pl.corr(c_cpuTime, c_cpuTime2, method="pearson"))
-            .sort(c_solver, c_solver2)
-            .select(c_solver, c_solver2, "corr")
-        )
         
         all = results.group_by(
                 c_query,
@@ -212,9 +210,8 @@ def init_routes(app, get_db):
         hist_coef = pl.arg_sort_by("date").over("solver_name") / pl.len().over("solver_name")
         results = results.select(c_solver,"solver_name","date").unique().sort("date","solver_name",c_solver).with_columns(hist_coef=hist_coef)
 
-        df_corr, df_solvers,df_nb_common,df_cosine_dist,df_too_few,df_solver_name= pl.collect_all(
+        df_solvers,df_nb_common,df_cosine_dist,df_too_few,df_solver_name= pl.collect_all(
             [
-                corr,
                 # cross_results, #df_results
                 results,
                 nb_common,
@@ -367,11 +364,10 @@ def init_routes(app, get_db):
                 all = g_isomap
             charts = all.to_html(fullhtml=False)
             
-        with pl.Config(tbl_width_chars=200):           
-            return render_template(
-                "charts.html",
-                logicData=logic_name,
-                printed="",
-                charts=charts,
-                inputs_value=locals(),
-            )
+        return render_template(
+            "charts.html",
+            logicData=logic_name,
+            printed="",
+            charts=charts,
+            inputs_value=locals(),
+        )

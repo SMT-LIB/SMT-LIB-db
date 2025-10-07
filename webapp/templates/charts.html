@@ -63,6 +63,10 @@ function clearDiv(elementID)
             <label for="details" class="pure-checkbox"><input id="details" name="details" type="checkbox" {{ "checked" if inputs_value.details_requested }} /> Details</label>
             
         </div>
+        <div class="pure-controls">
+            <label for="virtual" class="pure-checkbox"><input id="virtual" name="virtual" type="checkbox" {{ "checked" if inputs_value.virtual_requested }} /> Add virtual best solver</label>
+            
+        </div>
         <button type="submit" class="pure-button pure-button-primary">Draw</button>
     </fieldset>
 </form>
