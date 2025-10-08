@@ -181,7 +181,7 @@ def compute_charts(logic_name, details_requested: bool, virtual_requested:bool,
     # print("df_cosine_dist2",df_cosine_dist2)
     df_cosine_dist2 = df_cosine_dist2.drop("solver")
     def isomap(components:List[str]) -> Tuple[pl.DataFrame,pl.DataFrame]:
-        embedding = sklearn.manifold.Isomap(n_components=len(components),metric="precomputed",n_neighbors=min(10,len(list_solvers_cosine)))
+        embedding = sklearn.manifold.Isomap(n_components=len(components),metric="precomputed",n_neighbors=min(10,len(list_solvers_cosine)-1))
         proj=embedding.fit_transform(df_cosine_dist2.to_numpy())
         df_corr = pl.concat([pl.DataFrame(embedding.dist_matrix_,schema=list_solvers_cosine),solvers_cosine],how = "horizontal").unpivot(index="solver",variable_name="solver2",value_name="corr").with_columns(solver2=pl.col("solver2").cast(pl.Categorical))
         # print(df_corr)
