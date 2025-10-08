@@ -12,6 +12,7 @@ import argparse
 import common_charts
 import typer
 from pathlib import Path
+from rich.progress import track
 
 app = typer.Typer()
 
@@ -21,21 +22,30 @@ env = Environment(
 )
 
 @app.command()
-def html(database:Path,folder:Path,logic:str,details:bool=False,virtual:bool=False,dist_too_few:float|None=None,min_common_benches:int=100):
-
-    r = common_charts.compute_charts(logic,details,virtual,dist_too_few,min_common_benches,database)
+def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,dist_too_few:float|None=None,min_common_benches:int=100):
 
     try:
         os.mkdir(f"{folder}/isomap")
     except:
         pass
     charts_template = env.get_template("isomap.html")
-    charts_template.stream(
-        logicData=logic,
-        printed="",
-        charts=r["all"].to_html(fullhtml=False),
-        inputs_value=r,
-    ).dump(f"{folder}/isomap/{logic}.html")
+    
+    if len(logic) == 0:
+        logic = common_charts.list_logics(database)
+    
+    for l in track(logic):
+        try:
+            r = common_charts.compute_charts(l,details,virtual,dist_too_few,min_common_benches,database)
+
+            charts_template.stream(
+                logicData=l,
+                printed="",
+                charts=r["all"].to_html(fullhtml=False),
+                show_form=False,
+                inputs_value=r,
+            ).dump(f"{folder}/isomap/{l}.html")
+        except Exception as e:
+            print (f"Error during conversion of {l}:",e)
 
 if __name__ == "__main__":
     app()

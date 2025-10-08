@@ -51,6 +51,8 @@ def read_feather(DATABASE:Path) -> pl.DataFrame:
         df.write_ipc(FEATHER)
         return df
 
+def list_logics(database):
+    return list(read_feather(database)["logic"].unique())
 
 def read_database(logic_name,database:Path) -> pl.LazyFrame:
     df = read_feather(database)
@@ -158,7 +160,7 @@ def compute_charts(logic_name, details_requested: bool, virtual_requested:bool,
     )
 
 
-    print(df_too_few)
+    #print(df_too_few)
     # print(df_nb_common.filter(pl.col("len") < 100))
 
     # bucket_domain: list[float] = list(df_buckets["bucket"])
@@ -169,53 +171,46 @@ def compute_charts(logic_name, details_requested: bool, virtual_requested:bool,
     #solver_domain.sort(key=lambda x: x.lower())
     solver_names=df_solver_name["solver_name"]
 
-    if False:
-        # Two provers can have no benchmars in common, their pairs is not in df_corrs
-        corrs: DefaultDict[Tuple[str, str], float] = defaultdict(lambda: 0.0)
-        for row in df_corr.rows(named=False):
-            corrs[row[0], row[1]] = row[2]
-        correlation_sorting(solver_domain, corrs, 10000)
-    else:
-        # df_all2 = df_all.pivot(on="id",index="solver")
-        # imputer = sklearn.impute.KNNImputer(n_neighbors=2)
-        # impute=imputer.fit_transform(df_all2.drop("solver"))
-        df_cosine_dist2 = df_cosine_dist.sort("solver","solver2").pivot(on="solver2",index="solver").fill_null(1.)
-        solvers_cosine = df_cosine_dist2.select("solver")
-        list_solvers_cosine = list(solvers_cosine["solver"])
-        df_cosine_dist2 = df_cosine_dist2.select("solver",*list_solvers_cosine)
-        # print("df_cosine_dist2",df_cosine_dist2)
-        df_cosine_dist2 = df_cosine_dist2.drop("solver")
-        def isomap(components:List[str]) -> Tuple[pl.DataFrame,pl.DataFrame]:
-            embedding = sklearn.manifold.Isomap(n_components=len(components),metric="precomputed",n_neighbors=10)
-            proj=embedding.fit_transform(df_cosine_dist2.to_numpy())
-            df_corr = pl.concat([pl.DataFrame(embedding.dist_matrix_,schema=list_solvers_cosine),solvers_cosine],how = "horizontal").unpivot(index="solver",variable_name="solver2",value_name="corr").with_columns(solver2=pl.col("solver2").cast(pl.Categorical))
-            # print(df_corr)
-            df_proj=pl.DataFrame(proj,schema=[(c,pl.Float64) for c in components]).with_columns(solvers_cosine)
-            return df_proj,df_corr
+    # df_all2 = df_all.pivot(on="id",index="solver")
+    # imputer = sklearn.impute.KNNImputer(n_neighbors=2)
+    # impute=imputer.fit_transform(df_all2.drop("solver"))
+    df_cosine_dist2 = df_cosine_dist.sort("solver","solver2").pivot(on="solver2",index="solver").fill_null(1.)
+    solvers_cosine = df_cosine_dist2.select("solver")
+    list_solvers_cosine = list(solvers_cosine["solver"])
+    df_cosine_dist2 = df_cosine_dist2.select("solver",*list_solvers_cosine)
+    # print("df_cosine_dist2",df_cosine_dist2)
+    df_cosine_dist2 = df_cosine_dist2.drop("solver")
+    def isomap(components:List[str]) -> Tuple[pl.DataFrame,pl.DataFrame]:
+        embedding = sklearn.manifold.Isomap(n_components=len(components),metric="precomputed",n_neighbors=min(10,len(list_solvers_cosine)))
+        proj=embedding.fit_transform(df_cosine_dist2.to_numpy())
+        df_corr = pl.concat([pl.DataFrame(embedding.dist_matrix_,schema=list_solvers_cosine),solvers_cosine],how = "horizontal").unpivot(index="solver",variable_name="solver2",value_name="corr").with_columns(solver2=pl.col("solver2").cast(pl.Categorical))
+        # print(df_corr)
+        df_proj=pl.DataFrame(proj,schema=[(c,pl.Float64) for c in components]).with_columns(solvers_cosine)
+        return df_proj,df_corr
         
-        # df_proj,df_corr = isomap(["proj"])
-        # df_proj = df_proj.sort("proj")
-        # solver_domain = list(df_proj["solver"])
-        
-        df_proj,df_corr = isomap(["x","y"])
-        
-        # print(df_corr.join(df_cosine_dist,on=["solver","solver2"]))
-        
-        df_proj=df_proj.join(df_solvers,on="solver")
-        df_cosine_dist=df_cosine_dist.join(df_solvers,on="solver")
-        df_corr=df_corr.join(df_solvers,on="solver")
-        df_nb_common=df_nb_common.join(df_solvers,on="solver")
-        # print("agglomeration")
-        # model = sklearn.cluster.AgglomerativeClustering(distance_threshold=0, n_clusters=None).fit(impute)
-        # solvers = list(df_all2["solver"])
-        # n_samples = len(solvers)
-        # for i, merge in enumerate(model.children_):
-        #     print("id:",i+n_samples)
-        #     for child_idx in merge:
-        #         if child_idx < n_samples:
-        #             print(solvers[child_idx])
-        #         else:
-        #             print(child_idx)
+    # df_proj,df_corr = isomap(["proj"])
+    # df_proj = df_proj.sort("proj")
+    # solver_domain = list(df_proj["solver"])
+    
+    df_proj,df_corr = isomap(["x","y"])
+    
+    # print(df_corr.join(df_cosine_dist,on=["solver","solver2"]))
+    
+    df_proj=df_proj.join(df_solvers,on="solver")
+    df_cosine_dist=df_cosine_dist.join(df_solvers,on="solver")
+    df_corr=df_corr.join(df_solvers,on="solver")
+    df_nb_common=df_nb_common.join(df_solvers,on="solver")
+    # print("agglomeration")
+    # model = sklearn.cluster.AgglomerativeClustering(distance_threshold=0, n_clusters=None).fit(impute)
+    # solvers = list(df_all2["solver"])
+    # n_samples = len(solvers)
+    # for i, merge in enumerate(model.children_):
+    #     print("id:",i+n_samples)
+    #     for child_idx in merge:
+    #         if child_idx < n_samples:
+    #             print(solvers[child_idx])
+    #         else:
+    #             print(child_idx)
 
 
         #lle = sklearn.manifold.locally_linear_embedding(df_all)

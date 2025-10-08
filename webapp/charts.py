@@ -29,5 +29,6 @@ def init_routes(app, get_db):
             logicData=logic_name,
             printed="",
             charts=r["all"].to_html(fullhtml=False),
+            show_form=True,
             inputs_value=r,
         )
