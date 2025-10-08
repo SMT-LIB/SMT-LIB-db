@@ -5,3 +5,4 @@ polars
 altair
 rich
 scikit-learn
+typer
