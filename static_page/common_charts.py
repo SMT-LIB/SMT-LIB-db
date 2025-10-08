@@ -288,10 +288,9 @@ def compute_charts(logic_name, details_requested: bool, virtual_requested:bool,
         )
     ).interactive()
 
-    with alt.data_transformers.disable_max_rows():
-        if details_requested:
-            all = (g_isomap | g_nb_common_benchs| g_select_provers_cosine  | g_select_provers )
-        else:
-            all = g_isomap
+    if details_requested:
+        all = (g_isomap | g_nb_common_benchs| g_select_provers_cosine  | g_select_provers )
+    else:
+        all = g_isomap
         
     return locals()

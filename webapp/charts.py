@@ -24,11 +24,12 @@ def init_routes(app, get_db):
         
         r = static_page.common_charts.compute_charts(logic_name,details_requested,virtual_requested,dist_too_few,min_common_benches)
 
-        return render_template(
-            "isomap.html",
-            logicData=logic_name,
-            printed="",
-            charts=r["all"].to_html(fullhtml=False),
-            show_form=True,
-            inputs_value=r,
-        )
+        with alt.data_transformers.disable_max_rows():
+            return render_template(
+                "isomap.html",
+                logicData=logic_name,
+                printed="",
+                charts=r["all"].to_html(fullhtml=False),
+                show_form=True,
+                inputs_value=r,
+            )
