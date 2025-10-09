@@ -22,7 +22,7 @@ env = Environment(
 )
 
 @app.command()
-def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,par4:bool=False,dist_too_few:float|None=None,min_common_benches:int=100,html:bool=True,pdf:bool=False,png:bool=False):
+def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,par4:bool=False,dist_too_few:float|None=None,min_common_benches:int=100,html:bool=True,pdf:bool=False,png:bool=False,index:bool=True):
 
     os.makedirs(f"{folder}/isomap",exist_ok=True)
     os.makedirs(f"{folder}/isomap/pdf",exist_ok=True)
@@ -31,6 +31,11 @@ def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual
     
     if len(logic) == 0:
         logic = common_charts.list_logics(database)
+    
+    logic.sort()
+    
+    if index:
+        env.get_template("isomap_index.html").stream(logics=logic,pdf=pdf,html=html,png=png).dump(str(folder / "isomap" / "index.html"))    
     
     for l in track(logic):
         try:
