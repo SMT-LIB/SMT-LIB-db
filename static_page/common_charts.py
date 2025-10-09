@@ -79,6 +79,7 @@ def compute_charts(
     dist_too_few: float | None,
     min_common_benches: int,
     par4: bool = False,
+    isomap_requested : bool = False,
     database: Path | None = None,
 ):
     if database is None:
@@ -230,16 +231,30 @@ def compute_charts(
     df_cosine_dist2 = df_cosine_dist2.drop("solver")
 
     def isomap(components: List[str]) -> Tuple[pl.DataFrame, pl.DataFrame]:
-        embedding = sklearn.manifold.Isomap(
-            n_components=len(components),
-            metric="precomputed",
-            n_neighbors=min(10, len(list_solvers_cosine) - 1),
-        )
+        if isomap_requested:
+            embedding = sklearn.manifold.Isomap(
+                n_components=len(components),
+                metric="precomputed",
+                n_neighbors=min(4, len(list_solvers_cosine) - 1),
+            )
+        else:
+            embedding = sklearn.manifold.MDS(
+                n_components=len(components),
+                dissimilarity="precomputed",
+                random_state=42
+            )
+        
         proj = embedding.fit_transform(df_cosine_dist2.to_numpy())
+        
+        if isomap_requested:
+            dist_matrix=embedding.dist_matrix_
+        else:
+            dist_matrix=embedding.dissimilarity_matrix_
+        
         df_corr = (
             pl.concat(
                 [
-                    pl.DataFrame(embedding.dist_matrix_, schema=list_solvers_cosine),
+                    pl.DataFrame(dist_matrix, schema=list_solvers_cosine),
                     solvers_cosine,
                 ],
                 how="horizontal",
@@ -339,9 +354,10 @@ def compute_charts(
     )
 
     show_trail = alt.param(bind=alt.binding_checkbox(name="Show trail"), value=True)
-
+    technic="Isomap" if isomap_requested else "MDS"
+    print(technic)
     base_isomap = (
-        alt.Chart(df_proj, title=f"Isomap for {logic_name}", width=500, height=500)
+        alt.Chart(df_proj, title=f"{technic} for {logic_name}", width=500, height=500)
         .encode(
             alt.X("x"),
             alt.Y("y"),

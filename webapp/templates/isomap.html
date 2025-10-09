@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<!-- TODO: host locally -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/grids-responsive-min.css">
+<script src="/static/htmx.min.js"></script>
+
+<link rel="stylesheet" href="/static/style.css">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+function clearDiv(elementID)
+{
+    document.getElementById(elementID).innerHTML = "";
+}
+</script>
+</head>
+<body>
+<div class="pure-g">
+    <div class="pure-u-1-8"></div>
+    <div class="pure-u-3-4">
+        {{ logicData }}
+    </div>
+    <div class="pure-u-3-4">
+        {{ printed | safe }}
+    </div>
+    <div class="pure-u-3-4">
+        {{ charts | safe }}
+    </div>
+</div>
+<div><p><ol>
+    <li>Get all the results in the database for the given logic</li>
+    <li>If requested ({{ "it is not" if inputs_value.dist_too_few else "it is" }}) remove the solvers that have not enough benchmarks ({{inputs_value.min_common_benches}}) in common with enough other solvers (50%)</li>
+    <li>Compute the distance between each solvers. It is defined as the cosine distance between the cpu time of the common benchmarks. More precisely, when comparing two solvers we restrict ourselves to the n-dimensionnal space of the cpu time of their common benchmarks (n is the number of common benchmarks). The coordinate of each solver is the cpu time for each benchmarks regardless of the result. The cosine distance is the angle between the two solvers at the origin.</li>
+    <li>If the solver that have not enough benchmarks in common are kept ({{ "they are" if inputs_value.dist_too_few else "they are not" }}) their distance is fixed at ({{inputs_value.dist_too_few}})</li>
+    <li>From the cosine distance an isomap is computed</li>
+</ol></p></div>
+<div>
+    <p>Solvers that have not enough benchmarks in common with more than 50% of the other solvers: </p>
+    <ul>
+    {% for item in inputs_value.df_too_few.to_dicts() %}
+    <li>{{item["solver"]}} ({{item["date"]}})</li>
+    {% endfor %}
+    </ul>
+</div>
+{% if show_form %}
+<div>
+    <p>Parameters:</p>
+    <form class="pure-form pure-form-aligned">
+    <fieldset>
+        <div class="pure-control-group">
+            <label for="min_common_benches">Minimum of common benchmarks</label>
+            <input id="min_common_benches" name="min_common_benches" type="text" value="{{inputs_value.min_common_benches }}" />
+            </label>
+        </div>
+        <div class="pure-control-group">
+            <label for="dist_too_few">if not empty, keep solvers below the minimum with this distance </label>
+            <input id="dist_too_few" name="dist_too_few" type="text" value="{{inputs_value.dist_too_few or ''}}" />
+            </label>
+        </div>
+        <div class="pure-controls">
+            <label for="details" class="pure-checkbox"><input id="details" name="details" type="checkbox" {{ "checked" if inputs_value.details_requested }} /> Details</label>
+            
+        </div>
+        <div class="pure-controls">
+            <label for="virtual" class="pure-checkbox"><input id="virtual" name="virtual" type="checkbox" {{ "checked" if inputs_value.virtual_requested }} /> Add virtual best solver</label>
+            
+        </div>
+        <div class="pure-controls">
+            <label for="isomap" class="pure-checkbox"><input id="isomap" name="isomap" type="checkbox" {{ "checked" if inputs_value.isomap_requested }} /> Use Isomap (otherwise MDS)</label>
+            
+        </div>
+        <div class="pure-controls">
+            <label for="par4" class="pure-checkbox"><input id="par4" name="par4" type="checkbox" {{ "checked" if inputs_value.par4 }} /> Use par4</label>
+            
+        </div>
+        <button type="submit" class="pure-button pure-button-primary">Draw</button>
+    </fieldset>
+</form>
+</div>
+{% endif %}
+</body>
+</html>
