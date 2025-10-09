@@ -10,4 +10,5 @@ dev = [
     "rich>=14.1.0",
     "scikit-learn>=1.7.2",
     "typer>=0.19.2",
+    "vl-convert-python>=1.8.0",
 ]

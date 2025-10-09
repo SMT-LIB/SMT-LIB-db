@@ -6,3 +6,4 @@ altair
 rich
 scikit-learn
 typer
+vl-convert-python

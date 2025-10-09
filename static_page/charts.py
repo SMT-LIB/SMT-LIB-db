@@ -22,12 +22,11 @@ env = Environment(
 )
 
 @app.command()
-def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,dist_too_few:float|None=None,min_common_benches:int=100):
+def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,par4:bool=False,dist_too_few:float|None=None,min_common_benches:int=100,html:bool=True,pdf:bool=False,png:bool=False):
 
-    try:
-        os.mkdir(f"{folder}/isomap")
-    except:
-        pass
+    os.makedirs(f"{folder}/isomap",exist_ok=True)
+    os.makedirs(f"{folder}/isomap/pdf",exist_ok=True)
+    os.makedirs(f"{folder}/isomap/png",exist_ok=True)
     charts_template = env.get_template("isomap.html")
     
     if len(logic) == 0:
@@ -35,15 +34,21 @@ def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual
     
     for l in track(logic):
         try:
-            r = common_charts.compute_charts(l,details,virtual,dist_too_few,min_common_benches,database)
+            r = common_charts.compute_charts(l,details,virtual,dist_too_few,min_common_benches,par4,database)
 
-            charts_template.stream(
-                logicData=l,
-                printed="",
-                charts=r["all"].to_html(fullhtml=False),
-                show_form=False,
-                inputs_value=r,
-            ).dump(f"{folder}/isomap/{l}.html")
+            if html:
+                charts_template.stream(
+                    logicData=l,
+                    printed="",
+                    charts=r["all"].to_html(fullhtml=False),
+                    show_form=False,
+                    inputs_value=r,
+                ).dump(str(folder / "isomap" / f"{l}.html"))
+            
+            if pdf:
+                r["all"].save(fp=folder / "isomap" / "pdf" / f"{l}.pdf",format="pdf")
+            if png:
+                r["all"].save(fp=folder / "isomap" / "png" / f"{l}.png",format="png")
         except Exception as e:
             print (f"Error during conversion of {l}:",e)
 
