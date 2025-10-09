@@ -73,6 +73,10 @@ function clearDiv(elementID)
             
         </div>
         <div class="pure-controls">
+            <label for="euclidean" class="pure-checkbox"><input id="euclidean" name="euclidean" type="checkbox" {{ "checked" if inputs_value.euclidean_requested }} /> Use euclidean (otherwise MDS)</label>
+            
+        </div>
+        <div class="pure-controls">
             <label for="par4" class="pure-checkbox"><input id="par4" name="par4" type="checkbox" {{ "checked" if inputs_value.par4 }} /> Use par4</label>
             
         </div>

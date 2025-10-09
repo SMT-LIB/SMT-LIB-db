@@ -22,7 +22,7 @@ env = Environment(
 )
 
 @app.command()
-def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,par4:bool=False,dist_too_few:float|None=None,min_common_benches:int=100,isomap:bool=False,html:bool=True,pdf:bool=False,png:bool=False,index:bool=True):
+def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual:bool=False,par4:bool=False,dist_too_few:float|None=None,min_common_benches:int=100,isomap:bool=False,euclidean:bool=False,html:bool=True,pdf:bool=False,png:bool=False,index:bool=True):
 
     os.makedirs(f"{folder}/isomap",exist_ok=True)
     os.makedirs(f"{folder}/isomap/pdf",exist_ok=True)
@@ -39,7 +39,7 @@ def html(database:Path,folder:Path,logic:list[str]=[],details:bool=False,virtual
     
     for l in track(logic):
         try:
-            r = common_charts.compute_charts(l,details,virtual,dist_too_few,min_common_benches,par4,isomap,database)
+            r = common_charts.compute_charts(l,details,virtual,dist_too_few,min_common_benches,par4,isomap,euclidean,database)
 
             if html:
                 charts_template.stream(

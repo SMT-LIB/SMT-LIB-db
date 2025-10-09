@@ -80,6 +80,7 @@ def compute_charts(
     min_common_benches: int,
     par4: bool = False,
     isomap_requested : bool = False,
+    euclidean_requested : bool = False,
     database: Path | None = None,
 ):
     if database is None:
@@ -156,16 +157,24 @@ def compute_charts(
 
     den = (c_cpuTime * c_cpuTime).sum() * (c_cpuTime2 * c_cpuTime2).sum()
 
-    cosine_dist = cross_results.group_by(
-        c_solver,
-        c_solver2,
-    ).agg(
-        cosine=pl.when(toofew)
-        .then(pl.lit(dist_too_few))
-        .when((den == pl.lit(0.0)))
-        .then(pl.lit(0.0))
-        .otherwise(pl.lit(1) - ((c_cpuTime * c_cpuTime2).sum() / den.sqrt()))
-    )
+    if euclidean_requested:
+        cosine_dist = cross_results.group_by(
+            c_solver,
+            c_solver2,
+        ).agg(
+            cosine=(((c_cpuTime - c_cpuTime2).pow(2).sum().sqrt()))
+        )        
+    else:
+        cosine_dist = cross_results.group_by(
+            c_solver,
+            c_solver2,
+        ).agg(
+            cosine=pl.when(toofew)
+            .then(pl.lit(dist_too_few))
+            .when((den == pl.lit(0.0)))
+            .then(pl.lit(0.0))
+            .otherwise(pl.lit(1) - ((c_cpuTime * c_cpuTime2).sum() / den.sqrt()))
+        )
 
     cross_results = (
         cross_results.group_by(
@@ -294,13 +303,16 @@ def compute_charts(
 
     # lle = sklearn.manifold.locally_linear_embedding(df_all)
 
+    technic="Isomap" if isomap_requested else "MDS"
+    distance="euclidean" if euclidean_requested else "cosine"
+
     # Create heatmap with selection
     solver_name = alt.selection_point(
         fields=["solver_name"], name="solver_name", bind="legend"
     )
     g_select_provers = (
         alt.Chart(
-            df_corr, title="smallest distance in neighborhood graph of cosine distance"
+            df_corr, title=f"smallest distance in neighborhood graph of {distance} distance"
         )
         .mark_rect()
         .encode(
@@ -319,7 +331,7 @@ def compute_charts(
     g_select_provers_cosine = (
         alt.Chart(
             df_cosine_dist,
-            title=f"cosine distance with (set to {dist_too_few} when less than {min_common_benches} common benchs)",
+            title=f"{distance} distance with (set to {dist_too_few} when less than {min_common_benches} common benchs)",
         )
         .mark_rect()
         .encode(
@@ -354,16 +366,15 @@ def compute_charts(
     )
 
     show_trail = alt.param(bind=alt.binding_checkbox(name="Show trail"), value=True)
-    technic="Isomap" if isomap_requested else "MDS"
-    print(technic)
+
     base_isomap = (
-        alt.Chart(df_proj, title=f"{technic} for {logic_name}", width=500, height=500)
+        alt.Chart(df_proj, title=f"{technic} with {distance} for {logic_name}", width=500, height=500)
         .encode(
             alt.X("x"),
             alt.Y("y"),
             alt.Tooltip("solver"),
-            alt.Color("solver_name:N").scale(domain=solver_names),
-            alt.Shape("solver_name:N").scale(domain=solver_names),
+            alt.Color("solver_name:N").scale(domain=list(solver_names)),
+            alt.Shape("solver_name:N").scale(domain=list(solver_names)),
         )
         .add_params(solver_name, show_trail)
     )
