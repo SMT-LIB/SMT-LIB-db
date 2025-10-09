@@ -19,7 +19,7 @@ def setup_benchmarks(connection):
         size INT,
         compressedSize INT,
         license INT,
-        generatedOn DATETTIME,
+        generatedOn DATETIME,
         generatedBy TEXT,
         generator TEXT,
         timeLimit REAL,
