@@ -56,7 +56,7 @@ for evalId, evalName, evalDate in evaluations:
     print("")
 
 fig, ax = plt.subplots()
-ax.plot(range(5,25), overall_solvers, 'x-')
+ax.plot(range(5,25), overall_solvers, 'o-', linewidth=2)
 
 ax.set(xlim=(5, 24), xticks=range(5, 24))
 ax.set_ylabel('Solvers')

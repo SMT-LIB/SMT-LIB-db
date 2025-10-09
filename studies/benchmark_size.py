@@ -44,7 +44,6 @@ for year in years:
         (args.logic, yearstr, oldyearstr),
     )
     result = query.fetchall()
-    print(len(result))
     sizes.append(list(map(lambda x: x[0], result)))
     compressedSizes.append(list(map(lambda x: x[1], result)))
 
@@ -63,48 +62,23 @@ bp = ax.boxplot(
     sym="",
     patch_artist=True,
     medianprops=dict(linewidth=1.5),
-    capprops=dict(linewidth=1.5),
+    capprops=dict(linewidth=1),
     boxprops=dict(facecolor="lightgray"),
     whis=(0, 100),
     widths=w,
 )
 
-side = "left"
-y0, y1 = ax.get_ylim()
-
-for i, box in enumerate(bp["boxes"]):
-    x = i + 1  # box center at positions 1..N
-    x0 = x - (w + 0.1) / 2 if side == "left" else x
-    clip = Rectangle((x0, y0), (w + 0.1) / 2, y1 - y0, transform=ax.transData)
-
-    box.set_clip_path(clip)
-    bp["medians"][i].set_clip_path(clip)
-    bp["caps"][2 * i].set_clip_path(clip)
-    bp["caps"][2 * i + 1].set_clip_path(clip)
-
 bp = ax.boxplot(
     compressedSizes,
     sym="",
     boxprops=dict(linestyle="--"),
-    whiskerprops=dict(linestyle="--"),
     capprops=dict(linestyle="--"),
-    medianprops=dict(linewidth=1.5),
+    medianprops=dict(linewidth=1.5, color="cornflowerblue"),
+    whiskerprops=dict(linestyle="",linewidth=0),
+    showcaps=False,
     whis=(0, 100),
     widths=w,
 )
-side = "right"
-for i, box in enumerate(bp["boxes"]):
-    x = i + 1  # box center at positions 1..N
-    x0 = x - (w + 0.1) / 2 if side == "left" else x
-    clip = Rectangle((x0, y0), (w + 0.1) / 2, y1 - y0, transform=ax.transData)
-
-    box.set_clip_path(clip)
-    bp["medians"][i].set_clip_path(clip)
-    bp["caps"][2 * i].set_clip_path(clip)
-    bp["caps"][2 * i + 1].set_clip_path(clip)
-
-# ax.step(range(1,21), maxsizes)
-# ax.step(range(1,21), minsizes)
 
 plt.yscale("log", base=2)
 ax.set_ylabel("Size (Bytes)")

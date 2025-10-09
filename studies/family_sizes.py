@@ -67,8 +67,9 @@ for x_loc, binned_data in zip(x_locations, binned_data_sets):
 
 ax.set_xticks(x_locations, logics)
 
-ax.set_ylabel("Numer of Benchmarks in Family (Base 10)")
+ax.set_ylabel("Benchmarks in Family")
 ax.set_xlabel("Logic")
+ax.grid(True)
 
 matplot2tikz.save("familyhistogram.tex")
 plt.show()
