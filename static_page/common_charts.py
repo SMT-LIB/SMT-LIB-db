@@ -244,7 +244,7 @@ def compute_charts(
             embedding = sklearn.manifold.Isomap(
                 n_components=len(components),
                 metric="precomputed",
-                n_neighbors=min(4, len(list_solvers_cosine) - 1),
+                n_neighbors=min(10, len(list_solvers_cosine) - 1),
             )
         else:
             embedding = sklearn.manifold.MDS(
