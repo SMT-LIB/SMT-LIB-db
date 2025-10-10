@@ -117,7 +117,7 @@ def compute_charts(
         results = pl.concat([results, virtual_best], how="vertical")
 
     if par4:
-        results = results.with_columns(cpuTime=pl.when(c_status.is_in(["sat","unsat"])).then(c_cpuTime).otherwise(pl.max_horizontal(c_cpuTime,pl.lit(60*20))))
+        results = results.with_columns(cpuTime=pl.when(c_status.is_in(["sat","unsat"])).then(c_cpuTime).otherwise(pl.max_horizontal(c_cpuTime,pl.lit(60*20*2))))
 
     #Computing the cross
     results_with = results.select(
@@ -155,16 +155,16 @@ def compute_charts(
         )
 
 
-    den = (c_cpuTime * c_cpuTime).sum() * (c_cpuTime2 * c_cpuTime2).sum()
-
     if euclidean_requested:
         cosine_dist = cross_results.group_by(
             c_solver,
             c_solver2,
         ).agg(
-            cosine=(((c_cpuTime - c_cpuTime2).pow(2).sum().sqrt()))
+            #We divide by the number of elements to counter balance the different number of common benchmarks
+            cosine=((((c_cpuTime - c_cpuTime2).pow(2).sum() / pl.len()).sqrt()))
         )        
     else:
+        den = (c_cpuTime * c_cpuTime).sum() * (c_cpuTime2 * c_cpuTime2).sum()
         cosine_dist = cross_results.group_by(
             c_solver,
             c_solver2,
@@ -194,7 +194,7 @@ def compute_charts(
         "solver_name"
     )
     results = (
-        results.select(c_solver, "solver_name", "date")
+        results.select(c_solver, "solver_name", "date", ratio_solved = (c_status.is_in(["sat","unsat"]).sum() / pl.len()).over("solver"))
         .unique()
         .sort("date", "solver_name", c_solver)
         .with_columns(hist_coef=hist_coef)
@@ -378,6 +378,7 @@ def compute_charts(
         )
         .add_params(solver_name, show_trail)
     )
+    max_ratio=df_proj["ratio_solved"].max()
     g_isomap = alt.layer(
         # Line layer
         base_isomap.mark_trail().encode(
@@ -392,6 +393,9 @@ def compute_charts(
         ),
         # Point layer
         base_isomap.mark_point(filled=True).encode(
+#            size = "ratio_solved:Q",#alt.value(100),
+#            alt.Size("ratio_solved:Q"),
+#            .scale(domain=[0.0, max_ratio], range=[2, 100]).legend(),
             opacity=alt.when(solver_name).then(alt.value(1.0)).otherwise(alt.value(0.3))
         ),
     ).interactive()
