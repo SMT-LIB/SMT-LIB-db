@@ -153,11 +153,12 @@ pkgs.stdenv.mkDerivation {
       python3
       sqlitebrowser
       sqlite
-      zig
+      zig_0_13
       zstd
       black
       parallel
       csvkit
+      gmp
       python312Packages.beautifulsoup4
       python312Packages.flask
       python312Packages.gunicorn

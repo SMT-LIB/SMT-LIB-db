@@ -478,7 +478,7 @@ def add_smt_comp_generic(connection, folder, year, date):
     name = f"SMT-COMP {year}"
     stats = make_stats_dict(name)
     hardwareRevision = 1 if year == "2024" else 2
-    timeLimit = 40*60 if year == "2019" else 20*60
+    timeLimit = 40 * 60 if year == "2019" else 20 * 60
     cursor = connection.execute(
         """
         INSERT INTO Evaluations(name, date, link, hardwareRevision, wallclockLimit, memoryLimit)
@@ -538,6 +538,85 @@ def add_smt_comp_generic(connection, folder, year, date):
     return stats
 
 
+def add_smt_comp_inc_starexec(connection, year, starexecfolder):
+    name = f"SMT-COMP {year}"
+    for r in connection.execute(
+        """
+        SELECT Id FROM Evaluations WHERE name=?
+        """,
+        (name,),
+    ):
+        evaluationId = r[0]
+    print(f"Adding SMT-COMP {year} incremental results")
+    path = Path(starexecfolder) / f"{year}"
+    for p in path.glob("*.zip"):
+        print(f"\tProcessing {p}")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            subprocess.run(
+                f"unzip '{p}'",
+                cwd=tmpdir,
+                shell=True,
+                stdout=subprocess.DEVNULL,
+            )
+            for logfile in Path(tmpdir).glob("**/*.txt"):
+                logpath = logfile.relative_to(tmpdir)
+
+                benchfile = logpath.parts[-2]
+                benchfolder = logpath.parts[4:-3]
+                benchmark = Path(*benchfolder) / benchfile
+
+                solver = logpath.parts[-3]
+                logic = logpath.parts[2]
+                family = logpath.parts[3]
+                solverVariantId = None
+                for r in connection.execute(
+                    """
+                        SELECT Id FROM SolverVariants WHERE fullName=? AND evaluation=?
+                        """,
+                    (solver, evaluationId),
+                ):
+                    solverVariantId = r[0]
+                benchId = benchmarks.guess_benchmark_id(
+                    connection, True, logic, family, str(benchmark)
+                )
+                if not benchId:
+                    print(
+                        f"WARNING: Benchmark {benchmark} of SMT-COMP {year} inc. not found"
+                    )
+                    continue
+                with open(logfile, "r") as log:
+                    count = 0
+                    for line in log.readlines():
+                        count = count + 1
+                        ll = line.strip().split("\t")[1].strip()
+                        status = benchmark_status(ll)
+                        queryId = None
+                        for r in connection.execute(
+                            """
+                                SELECT Id FROM Queries WHERE idx=? AND benchmark=?
+                            """,
+                            (count, benchId),
+                        ):
+                            queryId = r[0]
+                        if not queryId:
+                            break
+                        connection.execute(
+                            """
+                            INSERT INTO Results(evaluation, query, solverVariant, status)
+                            VALUES(?,?,?,?);
+                            """,
+                            (
+                                evaluationId,
+                                queryId,
+                                solverVariantId,
+                                status,
+                            ),
+                        )
+                    connection.commit()
+    connection.commit()
+    return None
+
+
 def add_smt_comp_inc_2024(connection, rawfolder):
     """
     Specialized routine for the incremental results of 2024.
@@ -545,23 +624,14 @@ def add_smt_comp_inc_2024(connection, rawfolder):
     name = f"SMT-COMP 2024"
     # TODO select SMT-COMP evaluation in full run.
     stats = make_stats_dict(name + "inc")
-    # for r in connection.execute(
-    #     """
-    #     SELECT Id FROM Evaluations WHERE name=?
-    #     """,
-    #     (name,),
-    # ):
-    #     evaluationId = cursor.lastrowid
-    #  Insert a test evaluation
-    cursor = connection.execute(
+    for r in connection.execute(
         """
-        INSERT INTO Evaluations(name, date, link, hardwareRevision, wallclockLimit, memoryLimit)
-        VALUES(?,?,?,?,?,?);
+        SELECT Id FROM Evaluations WHERE name=?
         """,
-        (name, "2024-07-22", f"https://smt-comp.github.io/", 1, 20 * 60, 30),
-    )
-    evaluationId = cursor.lastrowid
-    modules.solvers.populate_evaluation_solvers(connection, name, evaluationId)
+        (name,),
+    ):
+        evaluationId = r[0]
+    # modules.solvers.populate_evaluation_solvers(connection, name, evaluationId)
 
     print(f"Adding SMT-COMP 2024 incremental results")
 
@@ -648,7 +718,14 @@ def add_smt_comp_inc_2024(connection, rawfolder):
 
 
 def add_smt_comps(
-    connection, smtcompwwwfolder, smtcompfolder, smtevalcsv, smtexecdb, smtcompraw
+    connection,
+    smtcompwwwfolder,
+    smtcompfolder,
+    smtevalcsv,
+    smtexecdb,
+    smtcompraw,
+    starexecinc,
+    incremental=False,
 ):
     stats = []
     s = add_smt_comp_early(connection, "2005", "2005-07-12")
@@ -706,6 +783,7 @@ def add_smt_comps(
     s = add_smt_comp_oldstyle(connection, path2017, "2017", "2017-07-23")
     stats.append(s)
 
+    connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     s = add_smt_comp_generic(connection, smtcompwwwfolder, "2018", "2018-07-14")
     stats.append(s)
 
@@ -717,6 +795,7 @@ def add_smt_comps(
 
     s = add_smt_comp_generic(connection, smtcompwwwfolder, "2021", "2021-07-18")
     stats.append(s)
+    connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
     s = add_smt_comp_generic(connection, smtcompwwwfolder, "2022", "2022-08-10")
     stats.append(s)
@@ -727,7 +806,23 @@ def add_smt_comps(
     s = add_smt_comp_generic(connection, smtcompwwwfolder, "2024", "2024-07-22")
     stats.append(s)
 
-    add_smt_comp_inc_2024(connection, smtcompraw)
+    s = add_smt_comp_generic(connection, smtcompwwwfolder, "2025", "2024-08-11")
+    stats.append(s)
+    connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+
+    if incremental:
+        add_smt_comp_inc_starexec(connection, "2019", starexecinc)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        add_smt_comp_inc_starexec(connection, "2020", starexecinc)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        add_smt_comp_inc_starexec(connection, "2021", starexecinc)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        add_smt_comp_inc_starexec(connection, "2022", starexecinc)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        add_smt_comp_inc_starexec(connection, "2023", starexecinc)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        add_smt_comp_inc_2024(connection, smtcompraw)
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
     for stat in stats:
         print_stats_dict(stat)
@@ -752,7 +847,7 @@ def add_eval_ratings(connection, evaluationId):
             """
             SELECT COUNT(DISTINCT s.id) FROM Solvers AS s
                 INNER JOIN SolverVariants AS sv ON sv.solver = s.id
-                INNER JOIN Results AS r ON sv.Id = r.solverVariant
+                INNER JOIN Results AS r ON sv.id = r.solverVariant
                 INNER JOIN Benchmarks AS b ON b.id = r.query
             WHERE b.logic=? AND r.evaluation=? AND b.isIncremental=0
             """,
@@ -796,6 +891,8 @@ def add_eval_ratings(connection, evaluationId):
             count = count + 1
             if count % 1000 == 0:
                 print(f"Inserted {count} ratings.")
+            if count % 5000 == 0:
+                connection.commit()
     connection.commit()
 
 
@@ -821,6 +918,17 @@ def add_first_occurence(connection):
 
 def add_inferred_status(connection):
     print(f"Add inferred sat status.")
+
+    # There are odd disagreements with 2013, hence we exclude it
+    name = "SMT Evaluation 2013"
+    for r in connection.execute(
+        """
+        SELECT Id FROM Evaluations WHERE name=?
+        """,
+        (name,),
+    ):
+        evaluationId = r[0]
+
     # A benchmark gets a status if there is an evaluation where two different
     # solvers gave the same answer and there was no disagreement.
     connection.execute(
@@ -831,6 +939,7 @@ def add_inferred_status(connection):
               INNER JOIN SolverVariants AS var1 ON var1.id = res1.solverVariant
               INNER JOIN Queries AS sub ON sub.id == res1.query
               WHERE res1.status == "sat"
+                AND NOT res1.id == ?
                 AND NOT EXISTS (
                         SELECT NULL
                         FROM Results AS res2
@@ -849,7 +958,8 @@ def add_inferred_status(connection):
                     )
             GROUP BY res1.query
         )
-        """
+        """,
+        (evaluationId,),
     )
     connection.commit()
     print(f"Add inferred unsat status.")
@@ -861,6 +971,7 @@ def add_inferred_status(connection):
               INNER JOIN SolverVariants AS var1 ON var1.id = res1.solverVariant
               INNER JOIN Queries AS sub ON sub.id == res1.query
               WHERE res1.status == "unsat"
+                AND NOT res1.id == ?
                 AND NOT EXISTS (
                         SELECT NULL
                         FROM Results AS res2
@@ -879,7 +990,8 @@ def add_inferred_status(connection):
                     )
             GROUP BY res1.query
         )
-        """
+        """,
+        (evaluationId,),
     )
     connection.commit()
 

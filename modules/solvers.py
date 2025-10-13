@@ -40,13 +40,22 @@ known_solvers = [
     ("BAT", "https://www.khoury.northeastern.edu/home/pete/bat/index.html"),
     ("Beaver", "https://doi.org/10.1007/978-3-642-02658-4_53"),
     ("Bitwuzla", "https://bitwuzla.github.io/"),
+    (
+        "Bitwuzla-MachBV",
+        "https://github.com/Andeviking/Bitwuzla-MachBV-at-SMT-COMP-2025",
+    ),
     ("Boolector", "https://boolector.github.io/"),
     (
         "Boolector-ReasonLS",
         "https://smt-comp.github.io/2019/system-descriptions/boolector-ReasonLS.pdf",
     ),
+    (
+        "BVDecide",
+        "https://leanprover-community.github.io/mathlib4_docs/Lean/Elab/Tactic/BVDecide.html",
+    ),
     ("clsat", "https://homepage.divms.uiowa.edu/~ajreynol/smt09.pdf"),
     ("COLIBRI", "https://colibri.frama-c.com/"),
+    ("Colibri2", "https://colibri.frama-c.com/"),
     ("CryptoMiniSat", "https://www.msoos.org/cryptominisat5/"),
     ("Ctrl-Ergo", "https://gitlab.com/iguerNL/Ctrl-Ergo"),
     ("CVC", "https://doi.org/10.1007/3-540-45657-0_40"),
@@ -130,7 +139,9 @@ known_solvers = [
     ("Z3", "https://github.com/Z3Prover/z3"),
     ("Z3++", "https://z3-plus-plus.github.io/"),
     ("Z3-Noodler", "https://github.com/VeriFIT/z3-noodler"),
+    ("Z3-Noodler-Mocha", "https://github.com/Bazoka13/Z3-Noodler-Mocha"),
     ("Z3-Owl", "https://z3-owl.github.io/"),
+    ("z3siri", "https://github.com/SoftWiser-group/SiriSMT"),
     ("Z3string", "https://z3string.github.io/"),
     ("Z3-Trau", "https://github.com/diepbp/z3-trau"),
 ]
@@ -558,8 +569,22 @@ evaluation_solver_variants = {
     "SMT-COMP 2019": [
         ("Alt-Ergo", ["Alt-Ergo-SMTComp-2019-wrapped-sq_default"]),
         ("AProVE", ["AProVE NIA 2014-wrapped-sq_default"]),
-        ("Boolector", ["Boolector-wrapped-sq_default", "Poolector-wrapped-sq_default"]),
-        ("Boolector-ReasonLS", ["boolector-ReasonLS-wrapped-sq_default"]),
+        (
+            "Boolector",
+            [
+                "Boolector-wrapped-sq_default",
+                "Poolector-wrapped-sq_default",
+                "Boolector___default",
+                "Boolector incremental-wrapped-inc___default",
+            ],
+        ),
+        (
+            "Boolector-ReasonLS",
+            [
+                "boolector-ReasonLS-wrapped-sq_default",
+                "Boolector-ReasonLS-wrapped-inc___default",
+            ],
+        ),
         ("COLIBRI", ["colibri 2176-fixed-config-file-wrapped-sq_default"]),
         ("Ctrl-Ergo", ["Ctrl-Ergo-2019-wrapped-sq_default"]),
         (
@@ -568,6 +593,9 @@ evaluation_solver_variants = {
                 "CVC4-2019-06-03-d350fe1-wrapped-sq_default",
                 "CVC4-SymBreak_03_06_2019-wrapped-sq_default",
                 "master-2018-06-10-b19c840-competition-default_default",
+                "CVC4___default",
+                "CVC4-inc-2019-06-03-d350fe1-wrapped-inc___default",
+                "CVC4-inc-fixed-2019-06-26-0e351fa-wrapped-inc___default",
             ],
         ),
         (
@@ -575,17 +603,37 @@ evaluation_solver_variants = {
             [
                 "mathsat-20190601-wrapped-sq_default",
                 "mathsat-na-20190601-wrapped-sq_default",
+                "MathSAT___default",
+                "MathSAT-na-wrapped-inc___default",
+                "MathSAT-wrapped-inc___default",
             ],
         ),
         (
             "MinkeyRink",
-            ["MinkeyRink MT-wrapped-sq_default", "MinkeyRink ST-wrapped-sq_default"],
+            [
+                "MinkeyRink MT-wrapped-sq_default",
+                "MinkeyRink ST-wrapped-sq_default",
+                "MinkeyRink MT-wrapped-inc___default",
+                "MinkeyRink ST-wrapped-inc___default",
+            ],
         ),
         ("OpenSMT", ["OpenSMT-wrapped-sq_default"]),
         ("Par4", ["Par4-wrapped-sq_default"]),
         ("ProB", ["ProB-wrapped-sq_default"]),
-        ("Q3B", ["Q3B-wrapped-sq_default"]),
-        ("SMTInterpol", ["smtinterpol-2.5-514-wrapped-sq_default"]),
+        (
+            "Q3B",
+            [
+                "Q3B-wrapped-sq_default",
+                "Q3B-wrapped-inc___default",
+            ],
+        ),
+        (
+            "SMTInterpol",
+            [
+                "smtinterpol-2.5-514-wrapped-sq_default",
+                "smtinterpol-2.5-514-wrapped-inc___default",
+            ],
+        ),
         (
             "SMT-RAT",
             [
@@ -604,6 +652,8 @@ evaluation_solver_variants = {
                 "stp-mt-wrapped-sq_default",
                 "stp-portfolio-fixed-wrapped-sq_default",
                 "stp-riss-wrapped-sq_default",
+                "stp-incremental-2019-v2-wrapped-inc___default",
+                "stp-mt-wrapped-inc___default",
             ],
         ),
         (
@@ -612,6 +662,9 @@ evaluation_solver_variants = {
                 "UltimateEliminator+MathSAT-5.5.4-wrapped-sq_default",
                 "UltimateEliminator+SMTInterpol-wrapped-sq_default",
                 "UltimateEliminator+Yices-2.6.1-wrapped-sq_default",
+                "UltimateEliminator+MathSAT-5.5.4-wrapped-inc___default",
+                "UltimateEliminator+SMTInterpol-wrapped-inc___default",
+                "UltimateEliminator+Yices-2.6.1-wrapped-inc___default",
             ],
         ),
         (
@@ -634,6 +687,8 @@ evaluation_solver_variants = {
                 "Yices 2.6.2 Cryptominisat-wrapped-sq_default",
                 "Yices 2.6.2 MCSAT BV-wrapped-sq_default",
                 "Yices 2.6.2 new bvsolver-wrapped-sq_default",
+                "Yices 2.6.2 Incremental-wrapped-inc___default",
+                "Yices___default",
             ],
         ),
         ("Z3", ["z3-4.8.4-d6df51951f4c-wrapped-sq_default", "z3-4.7.1_default"]),
@@ -641,8 +696,21 @@ evaluation_solver_variants = {
     "SMT-COMP 2020": [
         ("Alt-Ergo", ["Alt-Ergo-SMTComp-2020_default"]),
         ("AProVE", ["AProVE NIA 2014_default"]),
-        ("Bitwuzla", ["Bitwuzla-fixed_default"]),
-        ("Boolector", ["Boolector-wrapped-sq_default", "Poolector-wrapped-sq_default"]),
+        (
+            "Bitwuzla",
+            [
+                "Bitwuzla-fixed_default",
+                "Bitwuzla-fixed-wrapped-inc___default",
+            ],
+        ),
+        (
+            "Boolector",
+            [
+                "Boolector-wrapped-sq_default",
+                "Poolector-wrapped-sq_default",
+                "Boolector___default",
+            ],
+        ),
         ("COLIBRI", ["COLIBRI 20.5.25_default"]),
         (
             "CVC4",
@@ -650,17 +718,42 @@ evaluation_solver_variants = {
                 "CVC4-sq-final_default",
                 "master-2018-06-10-b19c840-competition-default_default",
                 "CVC4-2019-06-03-d350fe1-wrapped-sq_default",
+                "CVC4___default",
+                "CVC4-inc-2019-06-03-d350fe1-wrapped-inc___default",
+                "CVC4-inc-final-wrapped-inc___default",
             ],
         ),
-        ("LazyBV2Int", ["LazyBV2Int20200523_default.sh"]),
-        ("MathSAT", ["MathSAT5_default.sh", "mathsat-20190601-wrapped-sq_default"]),
+        (
+            "LazyBV2Int",
+            [
+                "LazyBV2Int20200523_default.sh",
+                "LazyBV2Int20200523-wrapped-inc___default",
+            ],
+        ),
+        (
+            "MathSAT",
+            [
+                "MathSAT5_default.sh",
+                "mathsat-20190601-wrapped-sq_default",
+                "MathSAT5-wrapped-inc___default",
+                "MathSAT___default",
+                "MathSAT-na-wrapped-inc___default",
+                "MathSAT-wrapped-inc___default",
+            ],
+        ),
         (
             "MinkeyRink",
             ["MinkeyRink Solver 2020.3.1_default", "MinkeyRink Solver 2020.3_default"],
         ),
-        ("OpenSMT", ["OpenSMT_default"]),
+        ("OpenSMT", ["OpenSMT_default", "OpenSMT-wrapped-inc___default"]),
         ("Par4", ["Par4-wrapped-sq_default"]),
-        ("SMTInterpol", ["smtinterpol-2.5-679-gacfde87a_default"]),
+        (
+            "SMTInterpol",
+            [
+                "smtinterpol-2.5-679-gacfde87a_default",
+                "smtinterpol-2.5-679-gacfde87a-wrapped-inc___default",
+            ],
+        ),
         (
             "SMT-RAT",
             [
@@ -671,8 +764,22 @@ evaluation_solver_variants = {
             ],
         ),
         ("SPASS-SATT", ["SPASS-SATT-wrapped-sq_default"]),
-        ("STP", ["STP_default", "STP ++ Mergsat v1_default"]),
-        ("UltimateEliminator", ["UltimateEliminator+MathSAT-5.6.3_s_default"]),
+        (
+            "STP",
+            [
+                "STP_default",
+                "STP ++ Mergsat v1_default",
+                "STP ++ Mergsat v1-wrapped-inc-fixed___default",
+                "STP-wrapped-inc___default",
+            ],
+        ),
+        (
+            "UltimateEliminator",
+            [
+                "UltimateEliminator+MathSAT-5.6.3_s_default",
+                "UltimateEliminator+MathSAT-5.6.3_s-wrapped-inc___default",
+            ],
+        ),
         (
             "Vampire",
             [
@@ -685,7 +792,17 @@ evaluation_solver_variants = {
             "veriT",
             ["veriT_default", "veriT+raSAT+Redlog_default", "veriT+vite_default"],
         ),
-        ("Yices2", ["Yices 2.6.2 bug fix_default", "Yices 2.6.0_default"]),
+        (
+            "Yices2",
+            [
+                "Yices 2.6.2 bug fix_default",
+                "Yices 2.6.0_default",
+                "Yices 2.6.2 bug fix incremental-wrapped-inc___default",
+                "Yices 2.6.2 Incremental for SMTCOMP2020-wrapped-inc___default",
+                "Yices 2.6.2 Incremental-wrapped-inc___default",
+                "Yices___default",
+            ],
+        ),
         ("Z3string", ["Z3str4 SMTCOMP2020 v1.1_default"]),
         (
             "Z3",
@@ -693,12 +810,21 @@ evaluation_solver_variants = {
                 "z3-4.8.8_default",
                 "z3-4.7.1_default",
                 "z3-4.8.4-d6df51951f4c-wrapped-sq_default",
+                "z3-4.7.4-wrapped-inc___default",
+                "z3-4.8.4-wrapped-inc___default",
+                "Z3___default",
+                "z3-4.8.4-wrapped-inc___default",
+                "z3-4.8.8-wrapped-inc___default",
+                "Z3___default",
             ],
         ),
     ],
     "SMT-COMP 2021": [
         ("AProVE", ["AProVE NIA 2014_2021"]),
-        ("Bitwuzla", ["Bitwuzla-fixed_default"]),
+        (
+            "Bitwuzla",
+            ["Bitwuzla-fixed_default", "Bitwuzla-fixed-wrapped-inc___default"],
+        ),
         (
             "COLIBRI",
             [
@@ -713,24 +839,42 @@ evaluation_solver_variants = {
                 "CVC4-2019-06-03-d350fe1-wrapped-sq_default",
                 "CVC4-sq-final_default",
                 "master-2018-06-10-b19c840-competition-default_default",
+                "CVC4-inc-2019-06-03-d350fe1-wrapped-inc___default",
+                "CVC4-inc-final-wrapped-inc___default",
             ],
         ),
-        ("cvc5", ["cvc5-fixed_default"]),
+        ("cvc5", ["cvc5-fixed_default", "cvc5-inc-wrapped-inc___default"]),
         ("iProver", ["iProver-v3.5-final-fix2_iProver_SMT"]),
-        ("MathSAT", ["mathsat-5.6.6_default", "mathsat-20190601-wrapped-sq_default"]),
+        (
+            "MathSAT",
+            [
+                "mathsat-5.6.6_default",
+                "mathsat-20190601-wrapped-sq_default",
+                "mathsat-5.6.6-wrapped-inc___default",
+                "MathSAT5-wrapped-inc___default",
+                "MathSAT___default",
+            ],
+        ),
         ("mc2", ["mc2 2021-06-07_default.sh"]),
-        ("OpenSMT", ["OpenSMT-fixed_default"]),
+        ("OpenSMT", ["OpenSMT-fixed_default", "OpenSMT-wrapped-inc___default"]),
         ("Par4", ["Par4-wrapped-sq_default"]),
         (
             "SMTInterpol",
             [
                 "smtinterpol-2.5-823-g881e8631_default",
                 "smtinterpol-2.5-514-wrapped-sq_default",
+                "smtinterpol-2.5-823-g881e8631-wrapped-inc___default",
             ],
         ),
         ("SMT-RAT", ["smtrat-SMTCOMP_default", "smtrat-MCSAT_default"]),
-        ("STP", ["STP 2021.0_default"]),
-        ("UltimateEliminator", ["UltimateEliminator+MathSAT-5.6.6_default"]),
+        ("STP", ["STP 2021.0_default", "STP 2021.0-wrapped-inc___default"]),
+        (
+            "UltimateEliminator",
+            [
+                "UltimateEliminator+MathSAT-5.6.6_default",
+                "UltimateEliminator+MathSAT-5.6.6-wrapped-inc___default",
+            ],
+        ),
         (
             "Vampire",
             [
@@ -745,6 +889,11 @@ evaluation_solver_variants = {
                 "Yices 2.6.2 bug fix_default",
                 "Yices 2.6.0_default",
                 "Yices 2.6.2 for SMTCOMP2020_default",
+                "Yices 2.6.2 bug fix incremental-wrapped-inc___default",
+                "Yices 2.6.2 Incremental for SMTCOMP2020-wrapped-inc___default",
+                "Yices 2.6.2 incremental for SMTCOMP 2021-wrapped-inc___default",
+                "Yices 2.6.2 Incremental-wrapped-inc___default",
+                "Yices___default",
             ],
         ),
         ("YicesLS", ["YicesLS_0611_1448_default"]),
@@ -757,28 +906,79 @@ evaluation_solver_variants = {
                 "z3-4.7.1_default",
                 "z3-4.8.4-d6df51951f4c-wrapped-sq_default",
                 "z3-4.8.8_default",
+                "z3-4.8.11-wrapped-inc___default",
+                "z3-4.8.4-wrapped-inc___default",
+                "z3-4.8.8-wrapped-inc___default",
+                "Z3___default",
             ],
         ),
     ],
     "SMT-COMP 2022": [
-        ("Bitwuzla", ["Bitwuzla-fixed_default"]),
+        (
+            "Bitwuzla",
+            ["Bitwuzla-fixed_default", "Bitwuzla-fixed-wrapped-inc___default"],
+        ),
         ("COLIBRI", ["COLIBRI 22_06_18_default"]),
-        ("CVC4", ["CVC4-sq-final_default"]),
-        ("cvc5", ["cvc5_default", "cvc5-default-2022-07-02-b15e116-wrapped_sq"]),
-        ("MathSAT", ["MathSAT-5.6.8_default"]),
+        (
+            "CVC4",
+            [
+                "CVC4-sq-final_default",
+                "CVC4-inc-2019-06-03-d350fe1-wrapped-inc___default",
+            ],
+        ),
+        (
+            "cvc5",
+            [
+                "cvc5_default",
+                "cvc5-default-2022-07-02-b15e116-wrapped_sq",
+                "cvc5-inc-2022-07-02-b15e116-wrapped___incremental",
+                "cvc5-inc-wrapped-inc___default",
+            ],
+        ),
+        (
+            "MathSAT",
+            [
+                "MathSAT-5.6.8_default",
+                "mathsat-5.6.6-wrapped-inc___default",
+                "MathSAT-5.6.8___incremental",
+                "MathSAT___default",
+            ],
+        ),
         ("NRA-LS", ["NRA-LS-FINAL_default"]),
-        ("OpenSMT", ["opensmt fixed_default"]),
+        ("OpenSMT", ["opensmt fixed_default", "OpenSMT-wrapped___incremental"]),
         ("OSTRICH", ["OSTRICH 1.2_def"]),
         ("Par4", ["Par4-wrapped-sq_default"]),
         ("Q3B", ["Q3B_default"]),
         ("Q3B-pBNN", ["Q3B-pBDD SMT-COMP 2022 final_default"]),
-        ("SMTInterpol", ["smtinterpol-fixed-2.5-1148-gf2d8e6b0_default"]),
+        (
+            "SMTInterpol",
+            [
+                "smtinterpol-fixed-2.5-1148-gf2d8e6b0_default",
+                "smtinterpol-2.5-1147-g108647d8-wrapped___incremental",
+            ],
+        ),
         ("SMT-RAT", ["SMT-RAT-MCSAT_default"]),
-        ("solsmt", ["solsmt-5b37426cad388922a-wrapped_default"]),
-        ("STP", ["STP 2022.4_default"]),
+        (
+            "solsmt",
+            [
+                "solsmt-5b37426cad388922a-wrapped_default",
+                "solsmt-5b37426cad388922a-wrapped___incremental",
+            ],
+        ),
+        (
+            "STP",
+            [
+                "STP 2022.4_default",
+                "STP 2021.0-wrapped-inc___default",
+                "STP 2022.2-wrapped___incremental",
+            ],
+        ),
         (
             "UltimateEliminator",
-            ["UltimateEliminator+MathSAT-5.6.7-wrapped_default"],
+            [
+                "UltimateEliminator+MathSAT-5.6.7-wrapped_default",
+                "UltimateEliminator+MathSAT-5.6.7-wrapped___incremental",
+            ],
         ),
         (
             "Vampire",
@@ -788,16 +988,34 @@ evaluation_solver_variants = {
             ],
         ),
         ("veriT", ["veriT_default", "veriT+raSAT+Redlog_default"]),
-        ("Yices2", ["Yices 2.6.2 for SMTCOMP 2021_default"]),
+        (
+            "Yices2",
+            [
+                "Yices 2.6.2 for SMTCOMP 2021_default",
+                "Yices 2.6.2 Incremental for SMTCOMP2020-wrapped-inc___default",
+                "Yices 2.6.2 incremental for SMTCOMP 2021-wrapped-inc___default",
+                "Yices 2.6.2 incremental for SMTCOMP 2021-wrapped___incremental",
+            ],
+        ),
         ("Yices-ismt", ["yices-ismt-0721_default"]),
         ("YicesQS", ["yicesQS-2022-07-02-optim-under10_default"]),
         ("Z3++BV", ["z3++bv_0702_default"]),
         ("Z3string", ["Z3str4_default"]),
         ("Z3++", ["z3++0715_default"]),
-        ("Z3", ["z3-4.8.17_default", "z3-4.8.11_default"]),
+        (
+            "Z3",
+            [
+                "z3-4.8.17_default",
+                "z3-4.8.11_default",
+                "z3-4.8.11-wrapped-inc___default",
+                "z3-4.8.17___incremental",
+                "z3-4.8.4-wrapped-inc___default",
+                "z3-4.8.8-wrapped-inc___default",
+            ],
+        ),
     ],
     "SMT-COMP 2023": [
-        ("Bitwuzla", ["Bitwuzla-fixed_default"]),
+        ("Bitwuzla", ["Bitwuzla-fixed_default", "Bitwuzla-wrapped___incremental"]),
         ("COLIBRI", ["COLIBRI 2023_05_10_default"]),
         ("CVC4", ["CVC4-sq-final_default"]),
         (
@@ -805,22 +1023,44 @@ evaluation_solver_variants = {
             [
                 "cvc5-default-2023-05-16-ea045f305_sq",
                 "cvc5-default-2022-07-02-b15e116-wrapped_sq",
+                "cvc5-inc-2023-05-16-ea045f305-wrapped___incremental",
+                "cvc5-inc-wrapped-inc___default",
             ],
         ),
         ("iProver", ["iProver-3.8-fix_iprover_SMT"]),
+        (
+            "MathSAT",
+            [
+                "mathsat-5.6.6-wrapped-inc___default",
+                "MathSAT___default",
+            ],
+        ),
         ("NRA-LS", ["cvc5-NRA-LS-sq_default"]),
-        ("OpenSMT", ["OpenSMT a78dcf01_default"]),
+        (
+            "OpenSMT",
+            [
+                "OpenSMT a78dcf01_default",
+                "OpenSMT a78dcf01-wrapped___incremental",
+            ],
+        ),
         ("OSTRICH", ["OSTRICH 1.3 SMT-COMP fixed_def"]),
         ("Par4", ["Par4-wrapped-sq_default"]),
         ("Q3B", ["Q3B_default"]),
-        ("SMTInterpol", ["smtinterpol-2.5-1272-g2d6d356c_default"]),
+        (
+            "SMTInterpol",
+            [
+                "smtinterpol-2.5-1272-g2d6d356c_default",
+                "smtinterpol-2.5-1272-g2d6d356c-wrapped___incremental",
+            ],
+        ),
         ("SMT-RAT", ["SMT-RAT-MCSAT_default"]),
-        ("STP", ["STP 2022.4_default"]),
+        ("STP", ["STP 2022.4_default", "STP 2022.4-wrapped___incremental"]),
         (
             "UltimateEliminator",
             [
                 "UltimateEliminator+MathSAT-5.6.9_default",
                 "UltimateIntBlastingWrapper+SMTInterpol_default",
+                "UltimateEliminator+MathSAT-5.6.9___incremental",
             ],
         ),
         ("Vampire", ["vampire_4.8_smt_pre_vampire_smtcomp"]),
@@ -830,6 +1070,10 @@ evaluation_solver_variants = {
             [
                 "Yices 2 for SMTCOMP 2023_default",
                 "Yices 2.6.2 for SMTCOMP 2021_default",
+                "Yices 2.6.2 incremental for SMTCOMP 2021-wrapped-inc___default",
+                "Yices 2.6.2 incremental for SMTCOMP 2021-wrapped___incremental",
+                "Yices2 incremental fixed-wrapped___incremental",
+                "Yices 2 incremental for SMT COMP 2023-wrapped___incremental",
             ],
         ),
         ("Yices-ismt", ["yices-ismt-sq-0526_default"]),
@@ -838,7 +1082,17 @@ evaluation_solver_variants = {
         ("Z3-Noodler", ["Z3-Noodler_default"]),
         ("Z3-Owl", ["z3-Owl-Final_default"]),
         ("Z3++", ["z3++0715_default", "Z3++_sq_0526_default"]),
-        ("Z3", ["z3-4.8.17_default", "z3-4.8.11_default"]),
+        (
+            "Z3",
+            [
+                "z3-4.8.17_default",
+                "z3-4.8.11_default",
+                "z3-4.8.11-wrapped-inc___default",
+                "z3-4.8.17___incremental",
+                "z3-4.8.4-wrapped-inc___default",
+                "z3-4.8.8-wrapped-inc___default",
+            ],
+        ),
     ],
     "SMT-COMP 2024": [
         ("Algaroba", ["Algaroba"]),
@@ -857,6 +1111,42 @@ evaluation_solver_variants = {
         ("YicesQS", ["YicesQS"]),
         ("Z3alpha", ["Z3-alpha"]),
         ("Z3-Noodler", ["Z3-Noodler"]),
+    ],
+    "SMT-COMP 2025": [
+        ("Amaya", ["Amaya"]),
+        ("Bitwuzla", ["Bitwuzla", "Bitwuzla-MachBV-base", "bitwuzla"]),
+        ("Bitwuzla-MachBV", ["Bitwuzla-MachBV"]),
+        ("BVDecide", ["bv_decide", "bv_decide-nokernel"]),
+        ("COLIBRI", ["COLIBRI"]),
+        ("Colibri2", ["colibri2"]),
+        ("cvc5", ["cvc5"]),
+        ("iProver", ["iProver v3.9.3"]),
+        ("OpenSMT", ["OpenSMT", "opensmt"]),
+        ("OSTRICH", ["OSTRICH"]),
+        ("SMTInterpol", ["SMTInterpol", "smtinterpol"]),
+        ("SMT-RAT", ["SMT-RAT"]),
+        (
+            "UltimateEliminator",
+            ["UltimateEliminator+MathSAT", "ultimateeliminatormathsat"],
+        ),
+        ("Yices2", ["Yices2", "yices2"]),
+        ("YicesQS", ["YicesQS"]),
+        (
+            "Z3",
+            [
+                "Z3-alpha-base",
+                "Z3-Noodler-base",
+                "Z3-Owl-base",
+                "z3siri-base",
+                "z3incz3base",
+            ],
+        ),
+        ("Z3alpha", ["Z3-alpha"]),
+        ("Z3-Owl", ["Z3-Owl"]),
+        ("Z3-Noodler", ["Z3-Noodler", "Z3-Noodler-Mocha-base"]),
+        ("Z3-Noodler-Mocha", ["Z3-Noodler-Mocha"]),
+        ("z3siri", "z3siri"),
+        ("Z3++", "z3incz3"),
     ],
 }
 
