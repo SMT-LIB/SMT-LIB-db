@@ -18,8 +18,8 @@ c_solver = pl.col("solver")
 c_solver2 = pl.col("solver2")
 c_ev_id = pl.col("ev_id")
 c_ev_id2 = pl.col("ev_id2")
-c_cpuTime = pl.col("cpuTime")
-c_cpuTime2 = pl.col("cpuTime2")
+c_time = pl.col("time")
+c_time2 = pl.col("time2")
 c_status = pl.col("status")
 c_status2 = pl.col("status2")
 c_bucket = pl.col("bucket")
@@ -37,8 +37,9 @@ def read_feather(DATABASE: Path) -> pl.DataFrame:
         df = pl.read_database(
             query="""
                 SELECT ev.name as eval_name, ev.date, ev.link, ev.id as ev_id, sol.name AS solver_name,
-                        sovar.fullName, res.status, res.cpuTime,
-                        query.id, bench.logic, sovar.id AS sovar_id
+                        sovar.fullName, res.status, res.wallclockTime, res.cpuTime,
+                        query.id, bench.logic, sovar.id AS sovar_id,
+                        ev.wallclockLimit
                     FROM Results AS res
                     INNER JOIN Benchmarks AS bench ON bench.id = query.benchmark
                     INNER JOIN Queries AS query ON res.query = query.id
@@ -50,6 +51,8 @@ def read_feather(DATABASE: Path) -> pl.DataFrame:
             schema_overrides={
                 "wallclockTime": pl.Float64,
                 "cpuTime": pl.Float64,
+                "wallclockTime": pl.Float64,
+                "wallclockLimit": pl.Float64,
                 "solver_name": pl.Categorical,
                 "fullName": pl.Categorical,
                 "sovar_id": pl.Int32,
@@ -67,7 +70,7 @@ def list_logics(database):
 def read_database(logic_name, database: Path) -> pl.LazyFrame:
     df = read_feather(database)
     results = df.lazy().filter(
-        c_cpuTime.is_not_null() & (pl.col("logic") == pl.lit(logic_name))
+        (pl.col("logic") == pl.lit(logic_name))
     )
     return results
 
@@ -96,13 +99,13 @@ def compute_charts(
             ),
             # solver=pl.col("sovar_id")
         )
-    ).select(c_query, c_solver, c_ev_id, c_cpuTime, c_status, "solver_name", "date")
+    ).select(c_query, c_solver, c_ev_id, c_status, "solver_name", "date", time="wallclockTime").filter(c_time.is_not_null())
 
     # Add virtual best
     if virtual_requested:
         virtual_best = (
             results.group_by(c_query)
-            .agg(c_cpuTime.min())
+            .agg(c_time.min())
             .with_columns(
                 solver_name=pl.lit("Virtual Best").cast(pl.Categorical),
                 solver=pl.lit("Virtual Best").cast(pl.Categorical),
@@ -111,20 +114,20 @@ def compute_charts(
                 date=pl.lit("now"),
             )
             .select(
-                c_query, c_solver, c_ev_id, c_cpuTime, c_status, "solver_name", "date"
+                c_query, c_solver, c_ev_id, c_time, c_status, "solver_name", "date"
             )
         )
         results = pl.concat([results, virtual_best], how="vertical")
 
     if par4:
-        results = results.with_columns(cpuTime=pl.when(c_status.is_in(["sat","unsat"])).then(c_cpuTime).otherwise(pl.max_horizontal(c_cpuTime,pl.lit(60*20*2))))
+        results = results.with_columns(time=pl.when(c_status.is_in(["sat","unsat"])).then(c_time).otherwise(pl.max_horizontal(c_time,pl.lit(60*20*2))))
 
     #Computing the cross
     results_with = results.select(
         c_query,
         solver2=c_solver,
         ev_id2=c_ev_id,
-        cpuTime2=c_cpuTime,
+        time2=c_time,
         status2=c_status,
     )
 
@@ -161,10 +164,10 @@ def compute_charts(
             c_solver2,
         ).agg(
             #We divide by the number of elements to counter balance the different number of common benchmarks
-            cosine=((((c_cpuTime - c_cpuTime2).pow(2).sum() / pl.len()).sqrt()))
+            cosine=((((c_time - c_time2).pow(2).sum() / pl.len()).sqrt()))
         )        
     else:
-        den = (c_cpuTime * c_cpuTime).sum() * (c_cpuTime2 * c_cpuTime2).sum()
+        den = (c_time * c_time).sum() * (c_time2 * c_time2).sum()
         cosine_dist = cross_results.group_by(
             c_solver,
             c_solver2,
@@ -173,7 +176,7 @@ def compute_charts(
             .then(pl.lit(dist_too_few))
             .when((den == pl.lit(0.0)))
             .then(pl.lit(0.0))
-            .otherwise(pl.lit(1) - ((c_cpuTime * c_cpuTime2).sum() / den.sqrt()))
+            .otherwise(pl.lit(1) - ((c_time * c_time2).sum() / den.sqrt()))
         )
 
     cross_results = (
@@ -193,11 +196,12 @@ def compute_charts(
     hist_coef = pl.arg_sort_by("date").over("solver_name") / pl.len().over(
         "solver_name"
     )
+    year = pl.col("date").str.split("-").list.first()
     results = (
         results.select(c_solver, "solver_name", "date", ratio_solved = (c_status.is_in(["sat","unsat"]).sum() / pl.len()).over("solver"))
         .unique()
         .sort("date", "solver_name", c_solver)
-        .with_columns(hist_coef=hist_coef)
+        .with_columns(hist_coef=hist_coef,year=year)
     )
 
     df_solvers, df_nb_common, df_cosine_dist, df_too_few, df_solver_name = (
@@ -393,7 +397,7 @@ def compute_charts(
         ),
         # Point layer
         base_isomap.mark_point(filled=True).encode(
-#            size = "ratio_solved:Q",#alt.value(100),
+            size = alt.value(100),
 #            alt.Size("ratio_solved:Q"),
 #            .scale(domain=[0.0, max_ratio], range=[2, 100]).legend(),
             opacity=alt.when(solver_name).then(alt.value(1.0)).otherwise(alt.value(0.3))
