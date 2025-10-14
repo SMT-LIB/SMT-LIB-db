@@ -29,21 +29,26 @@ evaluations.add_smt_comps(
     args.SMTEVAL_CSV,
     args.SMTEXEC_DB,
     args.SMTCOMP_RAW,
-    args.STAREXEC_INC
+    args.STAREXEC_INC,
 )
 
 print("Removing duplicates.")
 connection.execute(
     "create index duplicateIdx on Results(query, solverVariant, status, evaluation);"
 )
-connection.execute("""
-    DELETE FROM Results WHERE id NOT IN (
-            SELECT 
-            id
-        FROM Results
-        GROUP BY evaluation, query, solverVariant, cpuTime, wallclockTime, status
-        HAVING COUNT(*) > 1
-    );""")
+connection.execute(
+    """
+    DELETE FROM Results WHERE id > (
+        SELECT MIN(id)
+        FROM Results r2
+        WHERE Results.evaluation = r2.evaluation
+        AND Results.query = r2.query
+        AND Results.solverVariant = r2.solverVariant
+        AND Results.cpuTime = r2.cpuTime
+        AND Results.wallclockTime = r2.wallclockTime
+        AND Results.status = r2.status
+    );"""
+)
 connection.commit()
 
 print("Added competitions. Creating index for summaries.")
