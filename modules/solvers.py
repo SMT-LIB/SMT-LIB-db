@@ -916,7 +916,11 @@ evaluation_solver_variants = {
     "SMT-COMP 2022": [
         (
             "Bitwuzla",
-            ["Bitwuzla-fixed_default", "Bitwuzla-fixed-wrapped-inc___default"],
+            [
+                "Bitwuzla-fixed_default",
+                "Bitwuzla-wrapped_default",
+                "Bitwuzla-fixed-wrapped-inc___default",
+            ],
         ),
         ("COLIBRI", ["COLIBRI 22_06_18_default"]),
         (
