@@ -1,10 +1,10 @@
 """
-    Module to fix benchmark identifying information for past iterations of
-    SMT-COMP.
-    Sometimes benchmarks were moved or renamed.  We try to search for
-    benchmarks using `guess_benchmark_id`.  However, this is sometimes not
-    enough.  Here are some hard coded rules for these cases.
-    Note that some benchmarks were also removed for non-compliance.
+Module to fix benchmark identifying information for past iterations of
+SMT-COMP.
+Sometimes benchmarks were moved or renamed.  We try to search for
+benchmarks using `guess_benchmark_id`.  However, this is sometimes not
+enough.  Here are some hard coded rules for these cases.
+Note that some benchmarks were also removed for non-compliance.
 """
 
 

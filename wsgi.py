@@ -32,6 +32,7 @@ def get_db():
     db.row_factory = sqlite3.Row
     return db
 
+
 # def convert_to_df():
 #     df = pl.read_database(
 #         query="""
@@ -60,7 +61,6 @@ def get_db():
 #     FEATHER=Path(DATABASE+".feather")
 #     if FEATHER.exists():
 #         return pl.rea
-        
 
 
 app = Flask(__name__, static_folder="webapp/static", template_folder="webapp/templates")
