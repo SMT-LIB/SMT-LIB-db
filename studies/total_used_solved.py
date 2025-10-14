@@ -27,7 +27,7 @@ if args.logic == "ALL":
 
 connection = sqlite3.connect(args.database)
 
-years = list(range(2005, 2025))
+years = list(range(2005, 2026))
 fresh = []
 unsolved = []
 solved = []
@@ -114,42 +114,56 @@ for year in years:
     ):
         industrial.append(categoryRow[0])
 
-    print(f"{year}; {this_solved}; {this_unsolved - this_solved}; {this_fresh - this_unsolved}")
+    print(
+        f"{year}; {this_solved}; {this_unsolved - this_solved}; {this_fresh - this_unsolved}"
+    )
 
 connection.close()
 
-fig, ax = plt.subplots()
+plt.style.use("seaborn-v0_8-muted")
+fig, ax = plt.subplots(2, 1, layout="constrained")
 
-ax.stackplot(range(5,25), solved, unsolved, fresh, labels=["Solved", "Unsolved", "Fresh"])
+stacks = ax[0].stackplot(
+    range(5, 26), solved, unsolved, fresh, labels=["Solved", "Unsolved", "Fresh"]
+)
 
-ax.set(xlim=(5, 24), xticks=range(5, 24))
-ax.legend(title='Status')
-ax.set_ylabel('Benchmarks')
-ax.set_xlabel('Year (2005-2024)')
-ax.grid(True)
+# hatches=["\\\\", "xx",".."]
+# for stack, hatch in zip(stacks, hatches):
+#     stack.set_hatch(hatch)
 
-matplot2tikz.save("timeline.tex")
-plt.show()
-plt.clf()
-plt.close()
+ax[0].set(xlim=(5, 25), xticks=range(5, 26))
+ax[0].legend(title="Status")
+ax[0].set_ylabel("Benchmarks")
+# ax.set_xlabel('Year (2005-2024)')
+ax[0].set_xticklabels([])
+ax[0].grid(True)
 
 industrialNorm = []
 craftedNorm = []
 randomNorm = []
-for (ind, cra, ran) in zip(industrial, crafted, random):
+for ind, cra, ran in zip(industrial, crafted, random):
     total = ind + cra + ran
-    industrialNorm.append(ind/total * 100)
-    craftedNorm.append(cra/total * 100)
-    randomNorm.append(ran/total * 100)
+    industrialNorm.append(ind / total * 100)
+    craftedNorm.append(cra / total * 100)
+    randomNorm.append(ran / total * 100)
 
-fig, ax = plt.subplots()
-ax.stackplot(range(5,25), industrialNorm, craftedNorm, randomNorm, labels=["Industrial", "Crafted", "Random"])
+# fig, ax = plt.subplots()
+stacks = ax[1].stackplot(
+    range(5, 26),
+    industrialNorm,
+    craftedNorm,
+    randomNorm,
+    labels=["Industrial", "Crafted", "Random"],
+)
+# hatches=["\\\\", "xx",".."]
+# for stack, hatch in zip(stacks, hatches):
+#     stack.set_hatch(hatch)
 
-ax.set(xlim=(5, 24), xticks=range(5, 24), ylim=(0,100))
-ax.legend(title='Category')
-ax.set_ylabel('Percentage')
-ax.set_xlabel('Year (2005-2024)')
-ax.grid(True)
+ax[1].set(xlim=(5, 25), xticks=range(5, 26), ylim=(0, 100))
+ax[1].legend(title="Category")
+ax[1].set_ylabel("Percentage")
+ax[1].set_xlabel("Year (2005-2025)")
+ax[1].grid(True)
 
-matplot2tikz.save("categories.tex")
+matplot2tikz.save("history.tex")
 plt.show()

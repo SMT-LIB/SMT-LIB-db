@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-    Odd averange rating by age
+Odd averange rating by age
 """
 
 
@@ -24,7 +24,7 @@ if args.logic == "ALL":
 
 connection = sqlite3.connect(args.database)
 
-years = list(range(2005, 2025))
+years = list(range(2005, 2026))
 
 query = connection.execute(
     """
@@ -45,21 +45,20 @@ query = connection.execute(
     GROUP BY age_year
     ORDER BY age_year DESC;
     """
-    )
+)
 results = query.fetchall()
-for (year, avg) in results:
+for year, avg in results:
     print(f"{year} {avg:.2f}")
 
 year, avg = zip(*results)
 
 fig, ax = plt.subplots()
-ax.plot(year, avg, 'o-', linewidth=2)
+ax.plot(year, avg, "o-", linewidth=2)
 
 ax.set_ylabel("Average Rating")
 ax.set_xlabel("Age at Evaluation")
-ax.set(xlim=(0, 19), xticks=range(0, 20))
+ax.set(xlim=(0, 20), xticks=range(0, 21))
 ax.grid(True)
 
 matplot2tikz.save("ratingage.tex")
 plt.show()
-

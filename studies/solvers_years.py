@@ -55,12 +55,13 @@ for evalId, evalName, evalDate in evaluations:
             overall_solvers.append(logicSolversRow[0])
     print("")
 
+plt.style.use("seaborn-v0_8-muted")
 fig, ax = plt.subplots()
-ax.plot(range(5,25), overall_solvers, 'o-', linewidth=2)
+ax.plot(range(5, 26), overall_solvers, ".-", linewidth=2)
 
-ax.set(xlim=(5, 24), xticks=range(5, 24))
-ax.set_ylabel('Solvers')
-ax.set_xlabel('Year (2005-2024)')
+ax.set(xlim=(5, 25), xticks=range(5, 25))
+ax.set_ylabel("Solvers")
+ax.set_xlabel("Year (2005-2025)")
 ax.grid(True)
 
 matplot2tikz.save("solvers.tex")

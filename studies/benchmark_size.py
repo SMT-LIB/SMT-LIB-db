@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-    Violin plots of the benchmark size
+Violin plots of the benchmark size
 """
 
 
@@ -24,7 +24,7 @@ if args.logic == "ALL":
 
 connection = sqlite3.connect(args.database)
 
-years = list(range(2005, 2025))
+years = list(range(2005, 2026))
 sizes = []
 compressedSizes = []
 
@@ -53,6 +53,7 @@ print("preparing plot")
 # maxsizes = list(map(max, sizes))
 # minsizes = list(map(min, sizes))
 
+plt.style.use("seaborn-v0_8-muted")
 fig, ax = plt.subplots()
 w = 0.75
 
@@ -74,7 +75,7 @@ bp = ax.boxplot(
     boxprops=dict(linestyle="--"),
     capprops=dict(linestyle="--"),
     medianprops=dict(linewidth=1.5, color="cornflowerblue"),
-    whiskerprops=dict(linestyle="",linewidth=0),
+    whiskerprops=dict(linestyle="", linewidth=0),
     showcaps=False,
     whis=(0, 100),
     widths=w,
@@ -82,7 +83,7 @@ bp = ax.boxplot(
 
 plt.yscale("log", base=2)
 ax.set_ylabel("Size (Bytes)")
-ax.set_xlabel("Year (2005-2024)")
+ax.set_xlabel("Year (2005-2025)")
 ax.grid(True)
 
 matplot2tikz.save("sizeplot.tex")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-    Histograms of the family size
+Histograms of the family size
 """
 
 import argparse
@@ -60,6 +60,7 @@ heights = np.diff(bin_edges)
 centers = bin_edges[:-1] + heights / 2
 
 # Cycle through and plot each histogram
+plt.style.use("seaborn-v0_8-muted")
 fig, ax = plt.subplots()
 for x_loc, binned_data in zip(x_locations, binned_data_sets):
     lefts = x_loc - 0.5 * binned_data
