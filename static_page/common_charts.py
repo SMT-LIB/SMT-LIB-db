@@ -88,18 +88,24 @@ def compute_charts(
 ):
     if database is None:
         database = Path(os.environ["SMTLIB_DB"])
+    year = pl.col("date").str.split("-").list.first()
+    solver_name=pl.concat_str(pl.col("solver_name"), year, separator=" ").cast(
+            pl.Categorical
+        )
     results = (
         read_database(logic_name, database)
         # Remove duplicated results
         .group_by("ev_id", "sovar_id", "id")
         .last()
-        .with_columns(
-            solver=pl.concat_str(pl.col("fullName"), c_eval_name, separator=" ").cast(
-                pl.Categorical
-            ),
-            # solver=pl.col("sovar_id")
-        )
-    ).select(c_query, c_solver, c_ev_id, c_status, "solver_name", "date", time="wallclockTime").filter(c_time.is_not_null())
+        # .with_columns(
+        #     solver=pl.concat_str(pl.col("fullName"), c_eval_name, separator=" ").cast(
+        #         pl.Categorical
+        #     ),
+        #     # solver=pl.col("sovar_id")
+        # )
+    .select(c_query, c_ev_id, c_status, "solver_name", "date", time="wallclockTime",year=year).filter(c_time.is_not_null())
+    .group_by(c_query, "solver_name", c_ev_id).agg(time=c_time.median(),date=pl.col("date").first(),status=c_status.first()).with_columns(solver=solver_name,year=year)
+    )
 
     # Add virtual best
     if virtual_requested:
@@ -196,7 +202,6 @@ def compute_charts(
     hist_coef = pl.arg_sort_by("date").over("solver_name") / pl.len().over(
         "solver_name"
     )
-    year = pl.col("date").str.split("-").list.first()
     results = (
         results.select(c_solver, "solver_name", "date", ratio_solved = (c_status.is_in(["sat","unsat"]).sum() / pl.len()).over("solver"))
         .unique()
