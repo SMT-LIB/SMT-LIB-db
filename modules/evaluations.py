@@ -806,7 +806,7 @@ def add_smt_comps(
     s = add_smt_comp_generic(connection, smtcompwwwfolder, "2024", "2024-07-22")
     stats.append(s)
 
-    s = add_smt_comp_generic(connection, smtcompwwwfolder, "2025", "2024-08-11")
+    s = add_smt_comp_generic(connection, smtcompwwwfolder, "2025", "2025-08-11")
     stats.append(s)
     connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
