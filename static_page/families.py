@@ -10,10 +10,7 @@ from rich.progress import track
     Writes index.html and the overview of families and logics.
 """
 
-env = Environment(
-    loader=PackageLoader("families"),
-    autoescape=select_autoescape()
-)
+env = Environment(loader=PackageLoader("families"), autoescape=select_autoescape())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -26,9 +23,11 @@ if __name__ == "__main__":
     logics_template = env.get_template("logics.html")
     family_template = env.get_template("family.html")
 
-    res = connection.execute("""
+    res = connection.execute(
+        """
             SELECT logic FROM Logics
-        """)
+        """
+    )
     logics = res.fetchall()
 
     qf_logics = [l[0] for l in logics if l[0].startswith("QF_")]
@@ -40,12 +39,15 @@ if __name__ == "__main__":
 
     logic_data = []
     for logic in logics:
-        res = connection.execute("""
+        res = connection.execute(
+            """
                 SELECT fam.id, fam.name, fam.date FROM Families AS fam
                 JOIN Benchmarks AS bench ON bench.family = fam.id
                 WHERE bench.logic = ?
                 GROUP BY fam.id;
-            """, (logic,))
+            """,
+            (logic,),
+        )
         families = res.fetchall()
         logic_data.append({"logic": logic, "families": families})
 
@@ -64,12 +66,16 @@ if __name__ == "__main__":
         pass
 
     for fam in track(families, description="Generating families"):
-        res = connection.execute("""
+        res = connection.execute(
+            """
                 SELECT bench.id, bench.logic, bench.name FROM Benchmarks AS bench
                 WHERE bench.family = ?
                 ORDER BY bench.logic;
-            """, (fam['id'],))
+            """,
+            (fam["id"],),
+        )
 
         benchmarks = res.fetchall()
-        family_template.stream(family=fam,benchmarks=benchmarks).dump(f"{args.folder}/family/{fam['id']}.html")
-        
+        family_template.stream(family=fam, benchmarks=benchmarks).dump(
+            f"{args.folder}/family/{fam['id']}.html"
+        )

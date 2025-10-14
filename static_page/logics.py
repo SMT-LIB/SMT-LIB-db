@@ -15,12 +15,13 @@ from rich.progress import track
 
 env = Environment(loader=PackageLoader("logics"), autoescape=select_autoescape())
 
+
 def bind_data(data, bins):
     hi = max(data)
     width = hi / bins
     counts = [0] * bins
 
-    centers = [round(((i + 0.5) * width)/1024, 2) for i in range(bins)]
+    centers = [round(((i + 0.5) * width) / 1024, 2) for i in range(bins)]
 
     for x in data:
         if x == hi:
@@ -30,6 +31,7 @@ def bind_data(data, bins):
         counts[idx] += 1
 
     return counts, centers
+
 
 if __name__ == "__main__":
     # alt.data_transformers.enable("vegafusion")
@@ -59,7 +61,7 @@ if __name__ == "__main__":
         pass
 
     for logic in logics:
-        logic_print_name= logic[0]
+        logic_print_name = logic[0]
         logic_name = logic_print_name
         if logic_print_name == "ALL":
             logic_name = "%"
@@ -150,22 +152,28 @@ if __name__ == "__main__":
             ):
                 industrial.append(categoryRow[0])
 
-        res = connection.execute("""
+        res = connection.execute(
+            """
                 SELECT COUNT(bench.id) FROM Families AS fam
                 JOIN Benchmarks AS bench ON bench.family = fam.id
                 WHERE bench.logic LIKE ?
                 GROUP BY fam.id;
-            """, (logic_name,))
+            """,
+            (logic_name,),
+        )
         family_sizes = res.fetchall()
         family_sizes = list(map(lambda x: x[0], family_sizes))
 
-        res = connection.execute("""
+        res = connection.execute(
+            """
                 SELECT size, compressedSize FROM Benchmarks
                 WHERE logic LIKE ?;
-            """, (logic_name,))
+            """,
+            (logic_name,),
+        )
         bench_sizes = res.fetchall()
-        benchmark_sizes = list(map(lambda x: x['size'], bench_sizes))
-        compressed_sizes = list(map(lambda x: x['compressedSize'], bench_sizes))
+        benchmark_sizes = list(map(lambda x: x["size"], bench_sizes))
+        compressed_sizes = list(map(lambda x: x["compressedSize"], bench_sizes))
 
         res = connection.execute("SELECT id,name,date FROM Evaluations")
         evaluations = res.fetchall()
@@ -202,8 +210,8 @@ if __name__ == "__main__":
             .encode(
                 x="years:O",
                 y="value:Q",
-                color=alt.Color("type:N", legend=alt.Legend(title='Freshness'))
-                )
+                color=alt.Color("type:N", legend=alt.Legend(title="Freshness")),
+            )
             .properties(width=800, height=300)
         )
 
@@ -221,8 +229,7 @@ if __name__ == "__main__":
             .encode(
                 x=alt.X("years:O", title="Years"),
                 y=alt.Y("value:Q", title="Percentage of Benchmarks").stack("normalize"),
-                color=alt.Color("type:N", 
-                legend=alt.Legend(title='Category'))
+                color=alt.Color("type:N", legend=alt.Legend(title="Category")),
             )
             .properties(width=800, height=300)
         )
@@ -230,9 +237,11 @@ if __name__ == "__main__":
         famsizedata = {"value": family_sizes}
         pf3 = pl.DataFrame(famsizedata)
         histochart = (
-            alt.Chart(pf3).mark_bar().encode(
+            alt.Chart(pf3)
+            .mark_bar()
+            .encode(
                 x=alt.X("value:Q", bin=True, title="Family Size"),
-                y=alt.Y('count()', title="Families"),
+                y=alt.Y("count()", title="Families"),
             )
             .properties(width=800, height=300)
         )
@@ -252,18 +261,20 @@ if __name__ == "__main__":
         size_chart = (
             alt.Chart(pf_size, title="Benchmark Size")
             .transform_fold(["histo"], as_=["bucket", "size"])
-            .mark_bar().encode(
+            .mark_bar()
+            .encode(
                 x=alt.X("centers:N", title="Size in Kibibytes"),
-                y=alt.Y("size:Q", title="Benchmarks") #.scale(type="log")
+                y=alt.Y("size:Q", title="Benchmarks"),  # .scale(type="log")
             )
             .properties(width=800, height=300)
         )
         compressed_chart = (
             alt.Chart(pf_compressed, title="Compressed Benchmark Size")
             .transform_fold(["histo"], as_=["bucket", "size"])
-            .mark_bar().encode(
+            .mark_bar()
+            .encode(
                 x=alt.X("centers:N", title="Size in Kibibytes"),
-                y=alt.Y("size:Q", title="Benchmarks") #.scale(type="log")
+                y=alt.Y("size:Q", title="Benchmarks"),  # .scale(type="log")
             )
             .properties(width=800, height=300)
         )
@@ -293,7 +304,7 @@ if __name__ == "__main__":
             .transform_fold(["solvers"], as_=["type", "value"])
             .encode(
                 x=alt.X("years:T", title="Competition Date"),
-                y=alt.Y("value:Q", title="Number of Solvers")
+                y=alt.Y("value:Q", title="Number of Solvers"),
             )
             .properties(width=800, height=300)
         )
@@ -309,7 +320,5 @@ if __name__ == "__main__":
             cat_chart=catchart.to_json(indent=None),
             fam_chart=histochart.to_json(indent=None),
             solvers_chart=solverchart.to_json(indent=None),
-            size_chart=size_histo.to_json(indent=None)
-            ).dump(
-            f"{args.folder}/logics/{logic_print_name}.html"
-        )
+            size_chart=size_histo.to_json(indent=None),
+        ).dump(f"{args.folder}/logics/{logic_print_name}.html")

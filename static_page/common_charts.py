@@ -69,9 +69,7 @@ def list_logics(database):
 
 def read_database(logic_name, database: Path) -> pl.LazyFrame:
     df = read_feather(database)
-    results = df.lazy().filter(
-        (pl.col("logic") == pl.lit(logic_name))
-    )
+    results = df.lazy().filter((pl.col("logic") == pl.lit(logic_name)))
     return results
 
 
@@ -82,16 +80,16 @@ def compute_charts(
     dist_too_few: float | None,
     min_common_benches: int,
     par4: bool = False,
-    isomap_requested : bool = False,
-    euclidean_requested : bool = False,
+    isomap_requested: bool = False,
+    euclidean_requested: bool = False,
     database: Path | None = None,
 ):
     if database is None:
         database = Path(os.environ["SMTLIB_DB"])
     year = pl.col("date").str.split("-").list.first()
-    solver_name=pl.concat_str(pl.col("solver_name"), year, separator=" ").cast(
-            pl.Categorical
-        )
+    solver_name = pl.concat_str(pl.col("solver_name"), year, separator=" ").cast(
+        pl.Categorical
+    )
     results = (
         read_database(logic_name, database)
         # Remove duplicated results
@@ -103,8 +101,19 @@ def compute_charts(
         #     ),
         #     # solver=pl.col("sovar_id")
         # )
-    .select(c_query, c_ev_id, c_status, "solver_name", "date", time="wallclockTime",year=year).filter(c_time.is_not_null())
-    .group_by(c_query, "solver_name", c_ev_id).agg(time=c_time.median(),date=pl.col("date").first(),status=c_status.first()).with_columns(solver=solver_name,year=year)
+        .select(
+            c_query,
+            c_ev_id,
+            c_status,
+            "solver_name",
+            "date",
+            time="wallclockTime",
+            year=year,
+        )
+        .filter(c_time.is_not_null())
+        .group_by(c_query, "solver_name", c_ev_id)
+        .agg(time=c_time.median(), date=pl.col("date").first(), status=c_status.first())
+        .with_columns(solver=solver_name, year=year)
     )
 
     # Add virtual best
@@ -119,16 +128,18 @@ def compute_charts(
                 status=pl.lit("unknown").cast(pl.Categorical),
                 date=pl.lit("now"),
             )
-            .select(
-                c_query, c_solver, c_ev_id, c_time, c_status, "solver_name", "date"
-            )
+            .select(c_query, c_solver, c_ev_id, c_time, c_status, "solver_name", "date")
         )
         results = pl.concat([results, virtual_best], how="vertical")
 
     if par4:
-        results = results.with_columns(time=pl.when(c_status.is_in(["sat","unsat"])).then(c_time).otherwise(pl.max_horizontal(c_time,pl.lit(60*20*2))))
+        results = results.with_columns(
+            time=pl.when(c_status.is_in(["sat", "unsat"]))
+            .then(c_time)
+            .otherwise(pl.max_horizontal(c_time, pl.lit(60 * 20 * 2)))
+        )
 
-    #Computing the cross
+    # Computing the cross
     results_with = results.select(
         c_query,
         solver2=c_solver,
@@ -163,15 +174,14 @@ def compute_charts(
             nb_enough.rename({"solver": "solver2"}), on="solver2"
         )
 
-
     if euclidean_requested:
         cosine_dist = cross_results.group_by(
             c_solver,
             c_solver2,
         ).agg(
-            #We divide by the number of elements to counter balance the different number of common benchmarks
+            # We divide by the number of elements to counter balance the different number of common benchmarks
             cosine=((((c_time - c_time2).pow(2).sum() / pl.len()).sqrt()))
-        )        
+        )
     else:
         den = (c_time * c_time).sum() * (c_time2 * c_time2).sum()
         cosine_dist = cross_results.group_by(
@@ -203,10 +213,17 @@ def compute_charts(
         "solver_name"
     )
     results = (
-        results.select(c_solver, "solver_name", "date", ratio_solved = (c_status.is_in(["sat","unsat"]).sum() / pl.len()).over("solver"))
+        results.select(
+            c_solver,
+            "solver_name",
+            "date",
+            ratio_solved=(c_status.is_in(["sat", "unsat"]).sum() / pl.len()).over(
+                "solver"
+            ),
+        )
         .unique()
         .sort("date", "solver_name", c_solver)
-        .with_columns(hist_coef=hist_coef,year=year)
+        .with_columns(hist_coef=hist_coef, year=year)
     )
 
     df_solvers, df_nb_common, df_cosine_dist, df_too_few, df_solver_name = (
@@ -259,16 +276,16 @@ def compute_charts(
             embedding = sklearn.manifold.MDS(
                 n_components=len(components),
                 dissimilarity="precomputed",
-                random_state=42
+                random_state=42,
             )
-        
+
         proj = embedding.fit_transform(df_cosine_dist2.to_numpy())
-        
+
         if isomap_requested:
-            dist_matrix=embedding.dist_matrix_
+            dist_matrix = embedding.dist_matrix_
         else:
-            dist_matrix=embedding.dissimilarity_matrix_
-        
+            dist_matrix = embedding.dissimilarity_matrix_
+
         df_corr = (
             pl.concat(
                 [
@@ -312,8 +329,8 @@ def compute_charts(
 
     # lle = sklearn.manifold.locally_linear_embedding(df_all)
 
-    technic="Isomap" if isomap_requested else "MDS"
-    distance="euclidean" if euclidean_requested else "cosine"
+    technic = "Isomap" if isomap_requested else "MDS"
+    distance = "euclidean" if euclidean_requested else "cosine"
 
     # Create heatmap with selection
     solver_name = alt.selection_point(
@@ -321,7 +338,8 @@ def compute_charts(
     )
     g_select_provers = (
         alt.Chart(
-            df_corr, title=f"smallest distance in neighborhood graph of {distance} distance"
+            df_corr,
+            title=f"smallest distance in neighborhood graph of {distance} distance",
         )
         .mark_rect()
         .encode(
@@ -377,7 +395,12 @@ def compute_charts(
     show_trail = alt.param(bind=alt.binding_checkbox(name="Show trail"), value=True)
 
     base_isomap = (
-        alt.Chart(df_proj, title=f"{technic} with {distance} for {logic_name}", width=500, height=500)
+        alt.Chart(
+            df_proj,
+            title=f"{technic} with {distance} for {logic_name}",
+            width=500,
+            height=500,
+        )
         .encode(
             alt.X("x"),
             alt.Y("y"),
@@ -387,7 +410,7 @@ def compute_charts(
         )
         .add_params(solver_name, show_trail)
     )
-    max_ratio=df_proj["ratio_solved"].max()
+    max_ratio = df_proj["ratio_solved"].max()
     g_isomap = alt.layer(
         # Line layer
         base_isomap.mark_trail().encode(
@@ -402,10 +425,12 @@ def compute_charts(
         ),
         # Point layer
         base_isomap.mark_point(filled=True).encode(
-            size = alt.value(100),
-#            alt.Size("ratio_solved:Q"),
-#            .scale(domain=[0.0, max_ratio], range=[2, 100]).legend(),
-            opacity=alt.when(solver_name).then(alt.value(1.0)).otherwise(alt.value(0.3))
+            size=alt.value(100),
+            #            alt.Size("ratio_solved:Q"),
+            #            .scale(domain=[0.0, max_ratio], range=[2, 100]).legend(),
+            opacity=alt.when(solver_name)
+            .then(alt.value(1.0))
+            .otherwise(alt.value(0.3)),
         ),
     ).interactive()
 
