@@ -3,7 +3,6 @@ import os
 import polars as pl
 from pathlib import Path
 from functools import cache
-import polars_distance as pld
 import altair as alt
 from flask import Flask, g, abort, render_template, request
 from typing import *
