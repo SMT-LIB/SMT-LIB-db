@@ -39,8 +39,8 @@ def get_benchmark(cursor, benchmark_id):
                s.name AS familyName,
                l.name AS licenseName
                FROM Benchmarks AS b
-                  INNER JOIN Families AS s ON s.Id = b.family
-                  INNER JOIN Licenses AS l ON l.Id = b.license
+                  INNER JOIN Families AS s ON s.id = b.family
+                  INNER JOIN Licenses AS l ON l.id = b.license
         WHERE b.id=?""",
         (benchmark_id,),
     ):
@@ -79,6 +79,7 @@ if __name__ == "__main__":
 
     benchmark_template = env.get_template("benchmark.html")
 
+    print(f"Getting Benchmark List")
     res = connection.execute(
         """
             SELECT id FROM Benchmarks
@@ -93,6 +94,7 @@ if __name__ == "__main__":
         pass
 
     for benchmark_id in benchmarks:
+        print(f"Fetching {benchmark_id}")
         benchmark_data = get_benchmark(connection, benchmark_id)
         query_data = get_queries(connection, benchmark_id)
         evaluation = get_evaluations(connection, query_data[0]["id"])

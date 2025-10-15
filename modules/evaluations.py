@@ -477,7 +477,7 @@ def add_smt_comp_oldstyle(connection, compressedCsvFilename, year, date):
 def add_smt_comp_generic(connection, folder, year, date):
     name = f"SMT-COMP {year}"
     stats = make_stats_dict(name)
-    hardwareRevision = 1 if year == "2024" else 2
+    hardwareRevision = 1 if int(year) >= 2024 else 2
     timeLimit = 40 * 60 if year == "2019" else 20 * 60
     cursor = connection.execute(
         """
