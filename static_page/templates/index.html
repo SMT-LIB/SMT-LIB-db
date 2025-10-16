@@ -11,8 +11,13 @@
 <script src="https://cdn.jsdelivr.net/npm/vega-embed@{{ vegaembed_version }}"></script>
 {% endif %}
 
-<link rel="stylesheet" href="/static/style.css">
+{% if not main_site %}
+<link rel="stylesheet" href="../static/style.css">
+{% else %}
+<link rel="stylesheet" href="./static/style.css">
+{% endif %}
 
+<title>{% if title %}{{ title }}{% else %}SMT-LIB{% endif %}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>

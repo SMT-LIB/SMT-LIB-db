@@ -1,0 +1,9 @@
+{% extends "index.html" %}
+{% block body %}
+<h1>Error: No Isomap For {{ logic }}</h1>
+<p>
+  Isomap generation failed because there is not enough data available in
+  {{ logic }}.  This could be because the logic does not have enough benchmarks,
+  or the solvers do not have enough benchmarks in common.
+</p>
+{% endblock %}

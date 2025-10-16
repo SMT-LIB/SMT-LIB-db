@@ -143,7 +143,35 @@ directory = "reports/coverage_html"
       hash = "sha256-FZ41809D9QOKYBKBlgZWfGWsOxitHoXFryIxp2r7YBQ=";
     };
   };
+  # polarsDistance = python312.pkgs.buildPythonPackage {
+  #   pname = "polars-distance";
+  #   version = "0.5.3";
+  #   doCheck = false;
+  #   format = "pyproject";
+  #   src = fetchPypi {
+  #     pname = "polars_distance";
+  #     version = "0.5.3";
+  #     hash = "sha256-Jrf7/DjeHIG4R/+oe08QbdENRYWiJA//iC4PH8saytg=";
+  #   };
+    
+  #   cargoDeps = rustPlatform.fetchCargoVendor {
+  #     pname = "polars-distance";
+  #     version = "0.5.3";
+  #     src = fetchPypi {
+  #       pname = "polars_distance";
+  #       version = "0.5.3";
+  #       hash = "sha256-Jrf7/DjeHIG4R/+oe08QbdENRYWiJA//iC4PH8saytg=";
+  #     };
+  #     hash = "sha256-2AG7dgBHsUl7GbjuGr23QLeDc+/0VoIkgFROxCLZg4Y=";
+  #   };
 
+  #   propagatedBuildInputs = with pkgs.python312Packages; [ setuptools setuptools-scm maturin polars ];
+  #   # nativeBuildInputs = with pkgs.python312Packages; [ setuptools setuptools-scm wheel matplotlib numpy pillow polars webcolors maturin ];
+  #   nativeBuildInputs = with rustPlatform; [
+  #     rustPlatform.cargoSetupHook
+  #     rustPlatform.maturinBuildHook
+  #   ];
+  # };
 in
 pkgs.stdenv.mkDerivation {
   name = "SMT-LIB-db";
@@ -169,7 +197,11 @@ pkgs.stdenv.mkDerivation {
       python312Packages.rich
       python312Packages.matplotlib
       python312Packages.numpy
+      python312Packages.scikit-learn
+      python312Packages.typer
+      uv
       matplot2tikz
+      # polarsDistance
   ];
 
 }

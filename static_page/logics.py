@@ -16,7 +16,7 @@ from rich.progress import track
 env = Environment(loader=PackageLoader("logics"), autoescape=select_autoescape())
 
 
-def bind_data(data, bins):
+def bin_data(data, bins):
     hi = max(data)
     width = hi / bins
     counts = [0] * bins
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
         print(f"Generating {logic_print_name}")
 
-        years = list(range(2005, 2025))
+        years = list(range(2005, 2026))
         fresh = []
         unsolved = []
         solved = []
@@ -154,8 +154,8 @@ if __name__ == "__main__":
 
         res = connection.execute(
             """
-                SELECT COUNT(bench.id) FROM Families AS fam
-                JOIN Benchmarks AS bench ON bench.family = fam.id
+                SELECT COUNT(bench.id) FROM Benchmarks AS bench
+                JOIN Families AS fam ON bench.family = fam.id
                 WHERE bench.logic LIKE ?
                 GROUP BY fam.id;
             """,
@@ -246,8 +246,8 @@ if __name__ == "__main__":
             .properties(width=800, height=300)
         )
 
-        (sizes_hist, centers) = bind_data(benchmark_sizes, 30)
-        (compressed_hist, compressed_centers) = bind_data(compressed_sizes, 30)
+        (sizes_hist, centers) = bin_data(benchmark_sizes, 30)
+        (compressed_hist, compressed_centers) = bin_data(compressed_sizes, 30)
         size_hist_data = {
             "histo": sizes_hist,
             "centers": centers,
@@ -312,6 +312,7 @@ if __name__ == "__main__":
 
         print(f"\tWriting {logic_print_name}.html")
         logic_template.stream(
+            title=f"{logic_print_name} Charts",
             vega_version=alt.VEGA_VERSION,
             vegalite_version=alt.VEGALITE_VERSION,
             vegaembed_version=alt.VEGAEMBED_VERSION,

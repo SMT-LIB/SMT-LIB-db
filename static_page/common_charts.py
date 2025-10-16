@@ -1,6 +1,8 @@
 import sqlite3
 import os
 import polars as pl
+
+pl.enable_string_cache()
 from pathlib import Path
 from functools import cache
 import altair as alt
@@ -391,7 +393,7 @@ def compute_charts(
         .add_params(solver_name)
     )
 
-    show_trail = alt.param(bind=alt.binding_checkbox(name="Show trail"), value=True)
+    show_trail = alt.param(bind=alt.binding_checkbox(name="Show trail "), value=True)
 
     base_isomap = (
         alt.Chart(

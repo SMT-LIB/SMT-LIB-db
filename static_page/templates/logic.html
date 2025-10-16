@@ -1,6 +1,13 @@
 {% extends "index.html" %}
 {% block body %}
-<h1>Diagrams for {{ logic }} </h1>
+{% if logic == "ALL" %}
+<h1>Charts All Benchmarks </h1>
+{% else %}
+<h1>Charts For
+          <a href="../index.html#{{ logic }}">{{ logic }}</a>
+        	(<a href="../isomap/{{ logic }}.html">Solver Isomap</a>)
+ </h1>
+{% endif %}
 
 <h2>Benchmark Timeline (Non-Incremental)</h2>
 <dl>

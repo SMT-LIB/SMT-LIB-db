@@ -41,7 +41,7 @@ if __name__ == "__main__":
     for logic in logics:
         res = connection.execute(
             """
-                SELECT fam.id, fam.name, fam.date FROM Families AS fam
+                SELECT fam.id, fam.name, fam.date, fam.firstOccurrence FROM Families AS fam
                 JOIN Benchmarks AS bench ON bench.family = fam.id
                 WHERE bench.logic = ?
                 GROUP BY fam.id;
@@ -55,7 +55,9 @@ if __name__ == "__main__":
         os.mkdir(args.folder)
     except:
         pass
-    logics_template.stream(logics=logic_data).dump(f"{args.folder}/index.html")
+    logics_template.stream(logics=logic_data, main_site=True).dump(
+        f"{args.folder}/index.html"
+    )
 
     res = connection.execute("SELECT * FROM Families;")
     families = res.fetchall()
@@ -76,6 +78,6 @@ if __name__ == "__main__":
         )
 
         benchmarks = res.fetchall()
-        family_template.stream(family=fam, benchmarks=benchmarks).dump(
-            f"{args.folder}/family/{fam['id']}.html"
-        )
+        family_template.stream(
+            title=f"{fam['name']} benchmarks", family=fam, benchmarks=benchmarks
+        ).dump(f"{args.folder}/family/{fam['id']}.html")

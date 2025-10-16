@@ -1,6 +1,6 @@
 {% extends "index.html" %}
 {% block body %}
-    <h1>Family {{ family.folderName }} </h1>
+    <h1>{{ family.folderName }} Benchmarks</h1>
     <div class="benchmark-body">
 <table class="pure-table pure-table-bordered benchmark-table">
   <thead>
@@ -24,11 +24,16 @@
 {% endif %}
 <table class="pure-table pure-table-bordered benchmark-table">
   <thead>
-  <tr><th id="{{ bench.logic }}"><a href="/logics/{{ bench.logic }}.html">{{ bench.logic }}</a></th></tr>
+  <tr><th id="{{ bench.logic }}">
+          <a href="../index.html#{{ bench.logic }}">{{ bench.logic }}</a>
+        	&#8226; <a href="../logics/{{ bench.logic }}.html">Charts</a>
+        	&#8226; <a href="../isomap/{{ bench.logic }}.html">Solver Isomap</a>
+        </th>
+  </tr>
   </thead>
   <tbody>
 {% endif %}
-  <tr><td><a href="bechnmark/{{ bench.id }}.html">{{ bench.name }}</a></td></tr>
+  <tr><td><a href="../benchmark/{{ bench.id }}.html">{{ bench.name }}</a></td></tr>
 {% endfor %}
   </tbody>
 </table>

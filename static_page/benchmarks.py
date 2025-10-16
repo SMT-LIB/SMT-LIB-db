@@ -93,7 +93,7 @@ if __name__ == "__main__":
     except:
         pass
 
-    for benchmark_id in benchmarks:
+    for benchmark_id in track(benchmarks):
         print(f"Fetching {benchmark_id}")
         benchmark_data = get_benchmark(connection, benchmark_id)
         query_data = get_queries(connection, benchmark_id)
@@ -112,6 +112,7 @@ if __name__ == "__main__":
 
         print(f"\tWriting benchmark {benchmark_id}")
         benchmark_template.stream(
+            title=f"SMT-LIB Benchmark",
             vega_version=alt.VEGA_VERSION,
             vegalite_version=alt.VEGALITE_VERSION,
             vegaembed_version=alt.VEGAEMBED_VERSION,

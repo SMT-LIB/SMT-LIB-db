@@ -2,6 +2,10 @@ pre {
     white-space: pre-wrap;
 }
 
+.big-ul {
+  font-size: 1.2em;
+}
+
 .search-suggestions {
     position: absolute;
     background-color: white;
@@ -21,6 +25,16 @@ pre {
 
 .benchmark-table tr td:first-child {
   width: 1%;
+  white-space: nowrap;
+}
+
+.full-width-table {
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.full-width-table tr td:first-child {
+  width: 30%;
   white-space: nowrap;
 }
 

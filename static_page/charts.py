@@ -48,16 +48,14 @@ def html(
     os.makedirs(f"{folder}/isomap/vega", exist_ok=True)
     os.makedirs(f"{folder}/isomap/data", exist_ok=True)
     charts_template = env.get_template("isomap.html")
+    error_template = env.get_template("isomap_error.html")
 
     if len(logic) == 0:
         logic = common_charts.list_logics(database)
 
     logic.sort()
-
-    if index:
-        env.get_template("isomap_index.html").stream(
-            logics=logic, pdf=pdf, html=html, png=png
-        ).dump(str(folder / "isomap" / "index.html"))
+    failed_logics = []
+    ok_logics = []
 
     for l in track(logic):
         try:
@@ -74,9 +72,17 @@ def html(
             )
         except Exception as e:
             print(f"Error during conversion of {l}:", e)
+            failed_logics.append(l)
+            error_template.stream(
+                title=f"Error {l} Isomap",
+                logic=l,
+            ).dump(str(folder / "isomap" / f"{l}.html"))
+            continue
+        ok_logics.append(l)
 
         if html:
             charts_template.stream(
+                title=f"{logic} Isomap",
                 logicData=l,
                 printed="",
                 charts=r["all"].to_html(fullhtml=False),
@@ -108,6 +114,16 @@ def html(
             (folder / "isomap" / "data" / f"{l}.json").write_text(
                 json.dumps(vega_spec, indent=2)
             )
+
+    if index:
+        env.get_template("isomap_index.html").stream(
+            title="Isomap Overview",
+            logics=ok_logics,
+            failed_logics=failed_logics,
+            pdf=pdf,
+            html=html,
+            png=png,
+        ).dump(str(folder / "isomap" / "index.html"))
 
 
 if __name__ == "__main__":
