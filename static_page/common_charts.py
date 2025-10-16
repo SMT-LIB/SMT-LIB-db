@@ -168,6 +168,7 @@ def compute_charts(
         .group_by(c_solver)
         .agg(pl.col("enough").sum())
         .filter(pl.col("enough") >= (pl.len() / pl.lit(2)))
+        .select(c_solver)
     )
 
     if dist_too_few is None:
@@ -235,12 +236,12 @@ def compute_charts(
                 nb_common,
                 cosine_dist,
                 results.join(nb_enough, on="solver", how="anti"),
-                results.select(pl.col("solver_name").unique().sort()),
+                results.join(nb_enough, on="solver").select(pl.col("solver_name").unique().sort()),
             ],
             engine="streaming",
         )
     )
-
+    
     # print(df_too_few)
     # print(df_nb_common.filter(pl.col("len") < 100))
 
@@ -250,7 +251,9 @@ def compute_charts(
 
     solver_domain: list[str] = list(df_solvers["solver"])
     # solver_domain.sort(key=lambda x: x.lower())
-    solver_names = df_solver_name["solver_name"]
+    solver_names = list(df_solver_name["solver_name"])
+    solver_names.sort(key=lambda x: x.lower())
+    
 
     # df_all2 = df_all.pivot(on="id",index="solver")
     # imputer = sklearn.impute.KNNImputer(n_neighbors=2)
@@ -334,7 +337,7 @@ def compute_charts(
     distance = "euclidean" if euclidean_requested else "cosine"
 
     # Create heatmap with selection
-    solver_name = alt.selection_point(
+    sel_solver_name = alt.selection_point(
         fields=["solver_name"], name="solver_name", bind="legend"
     )
     g_select_provers = (
@@ -349,11 +352,11 @@ def compute_charts(
                 domain=list(reversed(solver_domain))
             ),
             alt.Color("corr", scale=alt.Scale(scheme="lightmulti", reverse=True)),
-            opacity=alt.when(solver_name)
+            opacity=alt.when(sel_solver_name)
             .then(alt.value(1.0))
             .otherwise(alt.value(0.3)),
         )
-        .add_params(solver_name)
+        .add_params(sel_solver_name)
     )
 
     g_select_provers_cosine = (
@@ -368,11 +371,11 @@ def compute_charts(
                 domain=list(reversed(solver_domain))
             ),
             alt.Color("cosine", scale=alt.Scale(scheme="lightmulti", reverse=True)),
-            opacity=alt.when(solver_name)
+            opacity=alt.when(sel_solver_name)
             .then(alt.value(1.0))
             .otherwise(alt.value(0.3)),
         )
-        .add_params(solver_name)
+        .add_params(sel_solver_name)
     )
 
     g_nb_common_benchs = (
@@ -386,11 +389,11 @@ def compute_charts(
             alt.Color(
                 "len", scale=alt.Scale(scheme="lightmulti", reverse=True, type="log")
             ),
-            opacity=alt.when(solver_name)
+            opacity=alt.when(sel_solver_name)
             .then(alt.value(1.0))
             .otherwise(alt.value(0.3)),
         )
-        .add_params(solver_name)
+        .add_params(sel_solver_name)
     )
 
     show_trail = alt.param(bind=alt.binding_checkbox(name="Show trail "), value=True)
@@ -409,7 +412,7 @@ def compute_charts(
             alt.Color("solver_name:N").scale(domain=list(solver_names)),
             alt.Shape("solver_name:N").scale(domain=list(solver_names)),
         )
-        .add_params(solver_name, show_trail)
+        .add_params(sel_solver_name, show_trail)
     )
     max_ratio = df_proj["ratio_solved"].max()
     g_isomap = alt.layer(
@@ -420,7 +423,7 @@ def compute_charts(
             .scale(domain=[0.0, 1.0], range=[1, 12])
             .legend(None),
             color="solver_name:N",
-            opacity=alt.when(solver_name & show_trail)
+            opacity=alt.when(sel_solver_name & show_trail)
             .then(alt.value(0.3))
             .otherwise(alt.value(0.0)),
         ),
@@ -429,7 +432,7 @@ def compute_charts(
             size=alt.value(100),
             #            alt.Size("ratio_solved:Q"),
             #            .scale(domain=[0.0, max_ratio], range=[2, 100]).legend(),
-            opacity=alt.when(solver_name)
+            opacity=alt.when(sel_solver_name)
             .then(alt.value(1.0))
             .otherwise(alt.value(0.3)),
         ),
