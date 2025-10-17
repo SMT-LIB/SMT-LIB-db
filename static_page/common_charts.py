@@ -14,6 +14,7 @@ import math
 import sklearn
 
 c_query = pl.col("id")
+c_query2 = pl.col("id2")
 c_eval_name = pl.col("eval_name")
 c_solver = pl.col("solver")
 c_solver2 = pl.col("solver2")
@@ -40,13 +41,15 @@ def read_feather(DATABASE: Path) -> pl.DataFrame:
                 SELECT ev.name as eval_name, ev.date, ev.link, ev.id as ev_id, sol.name AS solver_name,
                         sovar.fullName, res.status, res.wallclockTime, res.cpuTime,
                         query.id, bench.logic, sovar.id AS sovar_id,
-                        ev.wallclockLimit
+                        ev.wallclockLimit, fam.name as family_name,
+                        bench.name as bench_name
                     FROM Results AS res
                     INNER JOIN Benchmarks AS bench ON bench.id = query.benchmark
                     INNER JOIN Queries AS query ON res.query = query.id
                     INNER JOIN Evaluations AS ev ON res.evaluation = ev.id
                     INNER JOIN SolverVariants AS sovar ON res.solverVariant = sovar.id
                     INNER JOIN Solvers AS sol ON sovar.solver = sol.id
+                    INNER JOIN Families AS fam ON bench.family = fam.id
                     """,
             connection=db,
             schema_overrides={
@@ -58,6 +61,9 @@ def read_feather(DATABASE: Path) -> pl.DataFrame:
                 "fullName": pl.Categorical,
                 "sovar_id": pl.Int32,
                 "status": pl.Categorical,
+                "id": pl.Int64,
+                "family_name" : pl.Categorical,
+                "bench_name" : pl.String,
             },
         )
         df.write_ipc(FEATHER)
@@ -214,7 +220,7 @@ def compute_charts(
     hist_coef = pl.arg_sort_by("date").over("solver_name") / pl.len().over(
         "solver_name"
     )
-    results = (
+    solver_info = (
         results.select(
             c_solver,
             "solver_name",
@@ -232,7 +238,7 @@ def compute_charts(
         pl.collect_all(
             [
                 # cross_results, #df_results
-                results,
+                solver_info,
                 nb_common,
                 cosine_dist,
                 results.join(nb_enough, on="solver", how="anti"),
@@ -442,5 +448,233 @@ def compute_charts(
         all = g_isomap | g_nb_common_benchs | g_select_provers_cosine | g_select_provers
     else:
         all = g_isomap
+
+    return locals()
+
+def compute_benchmark_charts(
+    logic_name,
+    min_common_benches: int,
+    par4: bool = False,
+    isomap_requested: bool = False,
+    euclidean_requested: bool = False,
+    database: Path | None = None,
+):
+    if database is None:
+        database = Path(os.environ["SMTLIB_DB"])
+    year = pl.col("date").str.split("-").list.first()
+    results = (
+        read_database(logic_name, database)
+        # Remove duplicated results
+        .group_by("ev_id", "sovar_id", "id")
+        .last()
+        # .with_columns(
+        #     solver=pl.concat_str(pl.col("fullName"), c_eval_name, separator=" ").cast(
+        #         pl.Categorical
+        #     ),
+        #     # solver=pl.col("sovar_id")
+        # )
+        .filter(ev_id=21)
+        .select(
+            c_query,
+            c_status,
+            "solver_name",
+            "date",
+            "family_name",
+            "bench_name",
+            time="wallclockTime",
+            year=year,
+        )
+        .filter(c_time.is_not_null())
+        .group_by(c_query, "solver_name", "family_name", "bench_name")
+        .agg(time=c_time.min(), date=pl.col("date").first(), status=c_status.first())
+        .with_columns(solver="solver_name")
+    ).sort("id").slice(0,20000)
+    
+    if par4:
+        results = results.with_columns(
+            time=pl.when(c_status.is_in(["sat", "unsat"]))
+            .then(c_time)
+            .otherwise(pl.max_horizontal(c_time, pl.lit(60 * 20 * 2)))
+        )
+
+    # Computing the cross
+    results_with = results.select(
+        c_query,
+        solver2=c_solver,
+        time2=c_time,
+        status2=c_status,
+    )
+
+    cross_results = results.join(results_with, on=[c_query], how="inner")
+
+    nb_common = (
+        cross_results.group_by(
+            c_solver,
+            c_solver2,
+        )
+        .len()
+        .sort("len")
+    )
+
+    toofew = pl.len() <= pl.lit(min_common_benches)
+
+    nb_enough = (
+        cross_results.group_by(c_solver, c_solver2)
+        .agg(enough=toofew.not_())
+        .group_by(c_solver)
+        .agg(pl.col("enough").sum())
+        .filter(pl.col("enough") >= (pl.len() / pl.lit(2)))
+        .select(c_solver)
+    )
+    
+    results = results.join(nb_enough, on="solver")
+
+    results_with = results.select(
+        c_solver,
+        id2=c_query,
+        time2=c_time,
+        status2=c_status,
+    )
+
+    cross_results = results.sort("id").join(results_with.sort("id2"), on=[c_solver], how="inner")
+
+    if euclidean_requested:
+        cosine_dist = cross_results.group_by(
+            c_query,
+            c_query2,
+        ).agg(
+            # We divide by the number of elements to counter balance the different number of common benchmarks
+#            cosine=((((c_time - c_time2).pow(2).sum() / pl.len()).sqrt()))
+#             cosine=((((c_time - c_time2).abs().sum() / pl.len())))
+             cosine=((((c_time.log10() - c_time2.log10()).abs().sum() / pl.len())))
+        )
+    else:
+        den = (c_time * c_time).sum() * (c_time2 * c_time2).sum()
+        cosine_dist = cross_results.group_by(
+            c_query,
+            c_query2,
+        ).agg(
+            cosine=pl.when((den == pl.lit(0.0)))
+            .then(pl.lit(0.0))
+            .otherwise(pl.max_horizontal(pl.lit(0),(pl.lit(1) - ((c_time * c_time2).sum() / den.sqrt())))
+                    )        )
+
+    # print(cosine_dist.show_graph(plan_stage="ir",engine="streaming"))
+    # print(cosine_dist.show_graph(plan_stage="physical",engine="streaming"))
+
+    solving_solvers=c_solver.filter(c_status.is_in(["sat", "unsat"])).unique().sort()
+    nb_solving_solvers = solving_solvers.len().over("id")
+    solver_proved = pl.when(nb_solving_solvers==1).then(solving_solvers.str.join(",").over("id")).otherwise(nb_solving_solvers.cast(pl.String))
+
+    benchmark_info = results.select(c_query,"family_name","bench_name",
+                                    solvers=solver_proved
+                                    ).unique()
+
+    df_benchmark_info,df_cosine_dist = (
+        pl.collect_all([benchmark_info,cosine_dist],
+            engine="streaming"
+        )
+    )
+    
+    # print(df_too_few)
+    # print(df_nb_common.filter(pl.col("len") < 100))
+
+    # bucket_domain: list[float] = list(df_buckets["bucket"])
+    # status_domain: list[int] = list(df_status["status"])
+    # status_domain.sort()   
+
+    # df_all2 = df_all.pivot(on="id",index="solver")
+    # imputer = sklearn.impute.KNNImputer(n_neighbors=2)
+    # impute=imputer.fit_transform(df_all2.drop("solver"))
+    df_cosine_dist2 = (
+        df_cosine_dist.sort("id", "id2")
+        .pivot(on="id2", index="id")
+        .fill_null(1.0)
+    )
+    id_cosine = df_cosine_dist2.select("id")
+    list_id_cosine = list(map(str,map(int,id_cosine["id"])))
+    df_cosine_dist2 = df_cosine_dist2.select("id", *list_id_cosine)
+    # print("df_cosine_dist2",df_cosine_dist2)
+    df_cosine_dist2 = df_cosine_dist2.drop("id")
+
+    def isomap(components: List[str]) -> Tuple[pl.DataFrame, pl.DataFrame]:
+        if isomap_requested:
+            embedding = sklearn.manifold.Isomap(
+                n_components=len(components),
+                metric="precomputed",
+                n_neighbors=min(10, len(list_id_cosine) - 1),
+            )
+        else:
+            embedding = sklearn.manifold.MDS(
+                n_components=len(components),
+                dissimilarity="precomputed",
+                random_state=42,
+            )
+
+        proj = embedding.fit_transform(df_cosine_dist2.to_numpy())
+
+        if isomap_requested:
+            dist_matrix = embedding.dist_matrix_
+        else:
+            dist_matrix = embedding.dissimilarity_matrix_
+
+        df_corr = (
+            pl.concat(
+                [
+                    pl.DataFrame(dist_matrix, schema=list_id_cosine),
+                    id_cosine,
+                ],
+                how="horizontal",
+            )
+            .unpivot(index="id", variable_name="id2", value_name="corr")
+            .with_columns(solver2=pl.col("id2").cast(pl.Categorical),
+                          id=c_query.cast(pl.Int64),
+                          id2=c_query2.cast(pl.Int64))
+        )
+        # print(df_corr)
+        df_proj = pl.DataFrame(
+            proj, schema=[(c, pl.Float64) for c in components]
+        ).with_columns(id_cosine.cast(pl.Int64))
+        return df_proj, df_corr
+
+    # df_proj,df_corr = isomap(["proj"])
+    # df_proj = df_proj.sort("proj")
+    # solver_domain = list(df_proj["solver"])
+
+    df_proj, df_corr = isomap(["x", "y"])
+    
+    df_proj = df_proj.join(df_benchmark_info,on="id")
+
+    # print(df_corr.join(df_cosine_dist,on=["solver","solver2"]))
+
+    technic = "Isomap" if isomap_requested else "MDS"
+    distance = "euclidean" if euclidean_requested else "cosine"
+
+    base_isomap = (
+        alt.Chart(
+            df_proj,
+            title=f"{technic} with {distance} for benchmarks in {logic_name}",
+            width=500,
+            height=500
+        )
+        .encode(
+            alt.X("x"),
+            alt.Y("y"),
+            alt.Shape("family_name"),
+            alt.Tooltip("bench_name"),
+            alt.Color("solvers:N",title="Solving provers")
+        )
+    )
+    g_isomap = alt.layer(
+        # Point layer
+        base_isomap.mark_point(filled=True).encode(
+            size=alt.value(100),
+            #            alt.Size("ratio_solved:Q"),
+            #            .scale(domain=[0.0, max_ratio], range=[2, 100]).legend(),
+        ),
+    ).interactive()
+
+    all = g_isomap
+    df_too_few=pl.DataFrame()
 
     return locals()
