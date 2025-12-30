@@ -153,7 +153,7 @@ def add_smt_comp_early(connection, year, date):
     modules.solvers.populate_evaluation_solvers(connection, name, evaluationId)
     connection.commit()
     print(f"Adding SMT-COMP {year} results")
-    for htmlFile in Path(f"./early-SMT-COMP/{year}").glob("results-*-*.shtml"):
+    for htmlFile in Path(f"./data/early-SMT-COMP/{year}").glob("results-*-*.shtml"):
         soup = BeautifulSoup(open(htmlFile), "html.parser")
         header = re.match(old_header_regex, soup.find("h1").text)
         solver = header[1]
@@ -637,7 +637,7 @@ def add_smt_comp_inc_2024(connection, rawfolder):
 
     # Build mapping from scrambled file names to benchmark ids
     benchMap = {}
-    with open("incremental/2024-mapping.csv", newline="") as csvfile:
+    with open("data/incremental/2024-mapping.csv", newline="") as csvfile:
         reader = csv.DictReader(csvfile, delimiter=",")
         for row in reader:
             scrambledFile = row["scrambled_file"].split(".")[0]

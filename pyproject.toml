@@ -1,7 +1,7 @@
 [project]
 name = "smt-lib-db"
 version = "0.1.0"
-description = "Add your description here"
+description = "Tooling to build a metadata database of SMT-LIB benchmarks"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
