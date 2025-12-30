@@ -33,36 +33,6 @@ def get_db():
     return db
 
 
-# def convert_to_df():
-#     df = pl.read_database(
-#         query="""
-#         SELECT ev.name, ev.date, ev.link, ev.id as ev_id, sol.name AS solver,
-#                     sovar.fullName, res.status, res.cpuTime,
-#                     query.id, bench.logic
-#             FROM Results AS res
-#             INNER JOIN Benchmarks AS bench ON bench.id = query.benchmark
-#             INNER JOIN Queries AS query ON res.query = query.id
-#             INNER JOIN Evaluations AS ev ON res.evaluation = ev.id
-#             INNER JOIN SolverVariants AS sovar ON res.solverVariant = sovar.id
-#             INNER JOIN Solvers AS sol ON sovar.solver = sol.id
-#             """,
-#         connection=get_db(),
-#         schema_overrides={"wallclockTime": pl.Float64, "cpuTime": pl.Float64},
-#     )
-#     results = (
-#         df
-#         .filter(c_cpuTime.is_not_null()
-#         )
-#     )
-#     return results
-
-
-# def get_df():
-#     FEATHER=Path(DATABASE+".feather")
-#     if FEATHER.exists():
-#         return pl.rea
-
-
 app = Flask(__name__, static_folder="webapp/static", template_folder="webapp/templates")
 charts.init_routes(app, get_db)
 timeline.init_routes(app, get_db)
