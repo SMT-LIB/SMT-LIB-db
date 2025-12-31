@@ -5,7 +5,7 @@ tested.
 
 ## Building
 
-Klammerhammer needs Zig **0.13** and the C *zstd* library.
+Klammerhammer needs Zig **0.15** and the C *zstd* library.
 
 To compile a debug version and run it on an SMT-LIB file `FILENAME` run
 ```

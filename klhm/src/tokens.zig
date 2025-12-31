@@ -48,7 +48,7 @@ pub const TokenIterator = struct {
             return null;
         switch (self.data[self.pos]) {
             '(' => {
-                const ret = .{
+                const ret: Token = .{
                     .type = TokenType.Opening,
                     .span = self.data[self.pos .. self.pos + 1],
                 };
@@ -56,7 +56,7 @@ pub const TokenIterator = struct {
                 return ret;
             },
             ')' => {
-                const ret = .{
+                const ret: Token = .{
                     .type = TokenType.Closing,
                     .span = self.data[self.pos .. self.pos + 1],
                 };
@@ -68,7 +68,7 @@ pub const TokenIterator = struct {
                 const start = self.pos;
                 while (self.pos < self.data.len and self.data[self.pos] != '|')
                     self.pos += 1;
-                const ret = .{
+                const ret: Token = .{
                     .type = TokenType.String,
                     .span = self.data[start..self.pos],
                 };
@@ -88,7 +88,7 @@ pub const TokenIterator = struct {
                     }
                     self.pos += 1;
                 }
-                const ret = .{
+                const ret: Token = .{
                     .type = TokenType.String,
                     .span = self.data[start..self.pos],
                 };

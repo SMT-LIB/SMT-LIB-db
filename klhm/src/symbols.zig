@@ -10,8 +10,9 @@ const symbols = blk: {
 
     var idx: usize = 0;
     var symbol_list: []const map_type = &.{};
-    var symbol_iterator = std.mem.tokenize(u8, symbols_file, "\n");
+    var symbol_iterator = std.mem.splitScalar(u8, symbols_file, '\n');
     while (symbol_iterator.next()) |symbol| {
+        if (symbol.len == 0) continue;
         if (symbol[0] != ';') {
             symbol_list = symbol_list ++ &[_]map_type{.{ symbol, idx }};
             idx += 1;

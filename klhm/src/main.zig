@@ -188,9 +188,10 @@ pub fn main() !u8 {
     defer area.deinit();
     const allocator = area.allocator();
 
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
+
     _ = try stdout.write("[\n");
 
     if (.windows == @import("builtin").os.tag) {
@@ -209,10 +210,10 @@ pub fn main() !u8 {
     const file = try fs.cwd().openFile(filename, .{});
     defer file.close();
 
-    const md = try file.metadata();
+    const stat = try file.stat();
     const ptr = try std.posix.mmap(
         null,
-        md.size(),
+        stat.size,
         std.posix.PROT.READ | std.posix.PROT.WRITE,
         .{ .TYPE = .PRIVATE },
         file.handle,
@@ -228,10 +229,11 @@ pub fn main() !u8 {
     var benchmarkData: data.BenchmarkData = .{};
     benchmarkData.size = ptr.len;
 
-    var scopes = std.ArrayList(data.Scope).init(allocator);
-    try scopes.append(data.Scope{ .intervals = std.ArrayList(usize).init(allocator) });
+    var scopes: std.ArrayListAligned(data.Scope, null) = .empty;
+    defer scopes.deinit(allocator);
+    try scopes.append(allocator, data.Scope{ .intervals = .empty });
     var top = &scopes.items[scopes.items.len - 1];
-    try top.intervals.append(0);
+    try top.intervals.append(allocator, 0);
 
     var idx: usize = 0;
     while (true) {
@@ -385,17 +387,17 @@ pub fn main() !u8 {
                         const old_idx = top.intervals.items[top.intervals.items.len - 1];
                         top.data.normalizedSize += (level_start_idx - old_idx);
 
-                        try top.intervals.append(level_start_idx);
+                        try top.intervals.append(allocator, level_start_idx);
 
                         if (tokenIt.next()) |tkn| {
                             if (tkn.type == tokens.TokenType.Symbol) {
                                 const num = try std.fmt.parseInt(usize, tkn.span, 10);
                                 for (0..num) |_| {
                                     const new = data.Scope{
-                                        .intervals = std.ArrayList(usize).init(allocator),
+                                        .intervals = .empty,
                                         .data = top.data,
                                     };
-                                    try scopes.append(new);
+                                    try scopes.append(allocator, new);
                                     top = &scopes.items[scopes.items.len - 1];
                                 }
                             } else {
@@ -403,16 +405,16 @@ pub fn main() !u8 {
                             }
                         } else return Errors.OutOfTokens;
                         idx = try skip_rest_of_term(&tokenIt);
-                        try top.intervals.append(idx);
+                        try top.intervals.append(allocator, idx);
                     },
                     .pop => {
-                        try top.intervals.append(level_start_idx);
+                        try top.intervals.append(allocator, level_start_idx);
 
                         if (tokenIt.next()) |tkn| {
                             if (tkn.type == tokens.TokenType.Symbol) {
                                 const num = try std.fmt.parseInt(usize, tkn.span, 10);
                                 for (0..num) |_| {
-                                    top.intervals.deinit();
+                                    top.intervals.deinit(allocator);
                                     _ = scopes.pop();
                                     top = &scopes.items[scopes.items.len - 1];
                                 }
@@ -422,12 +424,12 @@ pub fn main() !u8 {
                         } else return Errors.OutOfTokens;
 
                         idx = try skip_rest_of_term(&tokenIt);
-                        try top.intervals.append(idx);
+                        try top.intervals.append(allocator, idx);
                     },
                     .check_sat, .check_sat_assuming => {
                         const old_idx = top.intervals.items[top.intervals.items.len - 1];
 
-                        try top.intervals.append(level_start_idx);
+                        try top.intervals.append(allocator, level_start_idx);
                         idx = try skip_rest_of_term(&tokenIt);
 
                         benchmarkData.queryCount += 1;
@@ -443,9 +445,9 @@ pub fn main() !u8 {
                         try top.data.print(stdout);
                         // try print_subproblem(stdout, ptr, &scopes, ptr[level_start_idx..idx]);
                         _ = try stdout.write(",\n");
-                        try bw.flush();
+                        try stdout.flush();
 
-                        try top.intervals.append(idx);
+                        try top.intervals.append(allocator, idx);
                     },
                     .exit => {
                         break;
@@ -470,6 +472,6 @@ pub fn main() !u8 {
     benchmarkData.compressedSize = try zstd.compressedSizeSlice(ptr);
     try benchmarkData.print(stdout);
     _ = try stdout.write("\n]\n");
-    try bw.flush();
+    try stdout.flush();
     return 0;
 }

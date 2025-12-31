@@ -17,9 +17,12 @@ pub const BenchmarkData = struct {
     queryCount: usize = 0,
     isIncremental: bool = false,
 
-    pub fn print(self: BenchmarkData, out: anytype) !void {
-        const options = std.json.StringifyOptions{ .whitespace = .minified };
-        try std.json.stringify(self, options, out);
+    pub fn print(self: BenchmarkData, writer: *std.io.Writer) !void {
+        var stringifier = std.json.Stringify{
+            .writer = writer,
+            .options = .{ .whitespace = .minified },
+        };
+        try stringifier.write(self);
     }
 
     const SourceField = enum {
@@ -121,9 +124,12 @@ pub const QueryData = struct {
     status: ?[]const u8 = null,
     symbolFrequency: [symbols.kvs.len]usize = [_]usize{0} ** symbols.kvs.len,
 
-    pub fn print(self: QueryData, out: anytype) !void {
-        const options = std.json.StringifyOptions{ .whitespace = .minified };
-        try std.json.stringify(self, options, out);
+    pub fn print(self: QueryData, writer: *std.io.Writer) !void {
+        var stringifier = std.json.Stringify{
+            .writer = writer,
+            .options = .{ .whitespace = .minified },
+        };
+        try stringifier.write(self);
     }
 };
 
