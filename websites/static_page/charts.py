@@ -82,7 +82,7 @@ def solver(
 
         if html:
             charts_template.stream(
-                title=f"{logic} Isomap",
+                title=f"{l} Isomap",
                 logicData=l,
                 printed="",
                 charts=r["all"].to_html(fullhtml=False),

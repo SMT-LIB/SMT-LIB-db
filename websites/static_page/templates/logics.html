@@ -1,10 +1,26 @@
 {% extends "index.html" %}
 {% block body %}
     <h1>Explore the SMT-LIB Benchmarks</h1>
+    <p>
+      This site allows you to browse the <a href="https://smt-lib.org/">SMT-LIB</a> benchmarks.
+      Select a logic or family below to see the benchmarks in this family.
+      The benchmark pages show benchmark metadata and historic competition
+      results.  There is also a page with informative charts for each logic,
+      and a comparison of the solvers on the logic.  See the chart pages
+      for an explanation.
+    </p>
+    <p>
+      The SMT-LIB benchmarks can be downloaded from Zenodo
+      (<a href="https://zenodo.org/records/16740866">non-incremental</a>, <a href="https://zenodo.org/records/15493096">incremental</a>).
+      The database that was used to generate this website
+      is also available on <a href="https://zenodo.org/records/16290040">Zenodo</a>.
+    </p>
+    <h2>Overview Pages</h2>
     <ul class="big-ul">
       <li><a href="./logics/ALL.html">Charts</a> for all benchmarks.</li>
       <li>Solver <a href="./isomap">Isomap overview</a>.</li>
     </ul>
+    </p>
     {% for ld in logics %}
     <table class="pure-table pure-table-bordered full-width-table">
       <thead>
