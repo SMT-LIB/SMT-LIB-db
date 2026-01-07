@@ -99,15 +99,16 @@ def make_stats_dict(name):
 
 
 def print_stats_dict(stats):
-    lookupPercentage = stats["lookupFailures"] / stats["lookups"] * 100.0
-    benchmarkPercentage = (
-        len(stats["unkownBenchmarks"]) / len(stats["benchmarks"]) * 100.0
-    )
-    print(
-        f"{stats['name']}\t\tMissing entries: {stats['lookupFailures']} {lookupPercentage:.2f}% Unknown Benchmark: {len(stats['unkownBenchmarks'])} {benchmarkPercentage:.2f}% Benchmarks: {len(stats['benchmarks'])} Lookups: {stats['lookups']}"
-    )
-    # for c in stats["withCandidates"]:
-    #     print(c)
+    try: 
+        lookupPercentage = stats["lookupFailures"] / stats["lookups"] * 100.0
+        benchmarkPercentage = (
+            len(stats["unkownBenchmarks"]) / len(stats["benchmarks"]) * 100.0
+        )
+        print(
+            f"{stats['name']}\t\tMissing entries: {stats['lookupFailures']} {lookupPercentage:.2f}% Unknown Benchmark: {len(stats['unkownBenchmarks'])} {benchmarkPercentage:.2f}% Benchmarks: {len(stats['benchmarks'])} Lookups: {stats['lookups']}"
+        )
+    except ZeroDivisionError:
+        print("Stats: Division by zero. Did you do a partial run?")
 
 
 def benchmark_status(solved_status):
@@ -360,23 +361,22 @@ def add_smt_eval_2013(connection, csvDataFile):
 
 # CSV format used 2014
 def add_smt_comp_2014(connection, compressedCsvFilename):
-    name = f"SMT-COMP 2014"
+    name = "SMT-COMP 2014"
     stats = make_stats_dict(name)
     cursor = connection.execute(
         """
         INSERT INTO Evaluations(name, date, link, hardwareRevision, wallclockLimit, memoryLimit)
         VALUES(?,?,?,?,?,?);
         """,
-        (name, "2014-07-21", f"https://smt-comp.github.io/2014/", 2, 25 * 60, 100),
+        (name, "2014-07-21", "https://smt-comp.github.io/2014/", 2, 25 * 60, 100),
     )
     evaluationId = cursor.lastrowid
     modules.solvers.populate_evaluation_solvers(connection, name, evaluationId)
     connection.commit()
-    print(f"Adding SMT-COMP 2014 results")
+    print("Adding SMT-COMP 2014 results")
     with tempfile.TemporaryDirectory() as tmpdir:
         subprocess.run(
-            f"tar -xf '{compressedCsvFilename}'",
-            cwd=tmpdir,
+            f"tar -C {tmpdir} -xf '{compressedCsvFilename}'",
             shell=True,
         )
         csvName = Path(compressedCsvFilename.stem).stem
@@ -431,8 +431,7 @@ def add_smt_comp_oldstyle(connection, compressedCsvFilename, year, date):
     print(f"Adding oldstyle SMT-COMP {year} results")
     with tempfile.TemporaryDirectory() as tmpdir:
         subprocess.run(
-            f"tar -xf '{compressedCsvFilename}'",
-            cwd=tmpdir,
+            f"tar -C {tmpdir} -xf '{compressedCsvFilename}'",
             shell=True,
         )
         csvName = Path(compressedCsvFilename.stem).stem
@@ -497,7 +496,7 @@ def add_smt_comp_generic(connection, folder, year, date):
     modules.solvers.populate_evaluation_solvers(connection, name, evaluationId)
     connection.commit()
     print(f"Adding SMT-COMP {year} results")
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory():
         subprocess.run(
             f"gunzip -fk {folder}/data/results-sq-{year}.json.gz",
             shell=True,
@@ -553,8 +552,7 @@ def add_smt_comp_inc_starexec(connection, year, starexecfolder):
         print(f"\tProcessing {p}")
         with tempfile.TemporaryDirectory() as tmpdir:
             subprocess.run(
-                f"unzip '{p}'",
-                cwd=tmpdir,
+                f"unzip '{p}' -d {tmpdir}",
                 shell=True,
                 stdout=subprocess.DEVNULL,
             )
@@ -670,8 +668,7 @@ def add_smt_comp_inc_2024(connection, rawfolder):
             solverVariantId = r[0]
         with tempfile.TemporaryDirectory() as tmpdir:
             subprocess.run(
-                f"unzip '{p}'",
-                cwd=tmpdir,
+                f"unzip '{p}' -d {tmpdir}",
                 shell=True,
                 stdout=subprocess.DEVNULL,
             )

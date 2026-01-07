@@ -1,12 +1,13 @@
 import re
 import datetime
 import subprocess
-import mmap
 import json
 import sqlite3
+import os
 
 import modules.solvers
 
+script_dir = os.path.dirname(__file__)
 
 def setup_benchmarks(connection):
     connection.execute(
@@ -97,7 +98,9 @@ def setup_benchmarks(connection):
     );"""
     )
 
-    with open("./klhm/src/smtlib-symbols", "r") as symbolFile:
+    with open(
+        os.path.join(script_dir, "../klhm/src/smtlib-symbols"), "r"
+    ) as symbolFile:
         count = 1
         for line in symbolFile:
             if line[0] == ";":
@@ -188,7 +191,7 @@ def add_benchmark(dbFile, benchmark, dolmenPath):
     fileName = "/".join(parts[3:])
 
     klhm = subprocess.run(
-        f"./klhm/zig-out/bin/klhm {benchmark}",
+        os.path.join(script_dir, f"../klhm/zig-out/bin/klhm {benchmark}"),
         shell=True,
         check=True,
         stdout=subprocess.PIPE,
@@ -231,7 +234,7 @@ def add_benchmark(dbFile, benchmark, dolmenPath):
     else:
         dolmenStrict = False
 
-    if dolmenStrict == None or dolmen == None:
+    if dolmenStrict is None or dolmen is None:
         print("Have none!")
 
     connection = sqlite3.connect(dbFile, timeout=30.0)
