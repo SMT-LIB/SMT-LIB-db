@@ -17,9 +17,13 @@ env = Environment(loader=PackageLoader("logics"), autoescape=select_autoescape()
 
 
 def bin_data(data, bins):
+    counts = [0] * bins
+
+    if len(data) == 0:
+        return counts, list(range(bins))
+
     hi = max(data)
     width = hi / bins
-    counts = [0] * bins
 
     centers = [round(((i + 0.5) * width) / 1024, 2) for i in range(bins)]
 

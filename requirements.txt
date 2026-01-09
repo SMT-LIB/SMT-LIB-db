@@ -7,3 +7,5 @@ rich
 scikit-learn
 typer
 vl-convert-python
+rpds-py
+matplot2tikz
