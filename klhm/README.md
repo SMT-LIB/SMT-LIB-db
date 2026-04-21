@@ -19,6 +19,11 @@ To get an optimized version run
 
 The compilied binary is in `./zig-out/bin/klhm`.
 
+There are two custom build options:
+
+* `-Dno-compression` deactivates the computation of compressed benchmark and query sizes.  This is useful for incremental benchmarks with many queries, since computing the compressed size is quadratic in the number of `pop` commands.
+* `-Dbenchmark-commands` makes Klammerhammer fail on any commands that are not allowed in benchmarks that are part of the SMT-LIB benchmark collection.
+
 ## Usage
 
 Klammerhammer has no options.  It takes the path of an SMT-LIB file as

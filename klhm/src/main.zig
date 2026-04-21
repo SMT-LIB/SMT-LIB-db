@@ -2,10 +2,12 @@ const std = @import("std");
 const fs = std.fs;
 const print = std.debug.print;
 
-const compress = @import("compress.zig");
 const data = @import("data.zig");
 const tokens = @import("tokens.zig");
 const symbols = @import("symbols.zig").symbol_map;
+const build_options = @import("build_options");
+
+const compress = if (!build_options.no_compression) @import("compress.zig") else null;
 
 const Errors = error{
     ImbalancedParentheses,
@@ -13,6 +15,7 @@ const Errors = error{
     OutOfTokens,
     UnsupportedPlatform,
     UnsupportedCmd,
+    NonBenchmarkCmd,
 };
 
 const Commands = enum {
@@ -223,8 +226,10 @@ pub fn main() !u8 {
 
     var tokenIt = tokens.TokenIterator{ .data = ptr };
 
-    var zstd = try compress.init();
-    defer zstd.deinit();
+    var zstd = if (!build_options.no_compression) (try compress.init()) else .{};
+    if (!build_options.no_compression) {
+        defer zstd.deinit();
+    }
 
     var benchmarkData: data.BenchmarkData = .{};
     benchmarkData.size = ptr.len;
@@ -436,11 +441,13 @@ pub fn main() !u8 {
                         // With check-sat we have to use the idx after the command,
                         // because we want to take its size into account.
                         top.data.normalizedSize += (idx - old_idx);
-                        top.data.compressedSize = try zstd.compressedSizeIntervalls(
-                            ptr,
-                            &scopes,
-                            ptr[level_start_idx..idx],
-                        );
+                        if (!build_options.no_compression) {
+                            top.data.compressedSize = try zstd.compressedSizeIntervalls(
+                                ptr,
+                                &scopes,
+                                ptr[level_start_idx..idx],
+                            );
+                        }
 
                         try top.data.print(stdout);
                         // try print_subproblem(stdout, ptr, &scopes, ptr[level_start_idx..idx]);
@@ -453,15 +460,22 @@ pub fn main() !u8 {
                         break;
                     },
                     .reset_assertions => {
-                        return Errors.UnsupportedCmd;
+                        return if (build_options.benchmark_commands)
+                            Errors.NonBenchmarkCmd
+                        else
+                            Errors.UnsupportedCmd;
                     },
                     else => {
                         idx = try skip_rest_of_term(&tokenIt);
                     },
                 }
             } else {
-                // Unkown command, do nothing
-                idx = try skip_rest_of_term(&tokenIt);
+                // Unkown command, fail or do nothing
+                if (build_options.benchmark_commands) {
+                    return Errors.NonBenchmarkCmd;
+                } else {
+                    idx = try skip_rest_of_term(&tokenIt);
+                }
             }
         } else {
             return Errors.OutOfTokens;
@@ -469,7 +483,9 @@ pub fn main() !u8 {
     }
 
     benchmarkData.isIncremental = benchmarkData.queryCount > 1;
-    benchmarkData.compressedSize = try zstd.compressedSizeSlice(ptr);
+    if (!build_options.no_compression) {
+        benchmarkData.compressedSize = try zstd.compressedSizeSlice(ptr);
+    }
     try benchmarkData.print(stdout);
     _ = try stdout.write("\n]\n");
     try stdout.flush();

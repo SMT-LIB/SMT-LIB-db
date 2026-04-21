@@ -28,6 +28,13 @@ pub fn build(b: *std.Build) void {
     exe.linkLibC();
     exe.linkSystemLibrary("zstd");
 
+    const build_options = b.addOptions();
+    const compression_option = b.option(bool, "no-compression", "Do not compute compressed query size.") orelse false;
+    build_options.addOption(bool, "no_compression", compression_option);
+    const benchmark_commands_option = b.option(bool, "benchmark-commands", "Only accept commands allowed in standard benchmarks.") orelse false;
+    build_options.addOption(bool, "benchmark_commands", benchmark_commands_option);
+    exe.root_module.addOptions("build_options", build_options);
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).

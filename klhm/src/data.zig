@@ -1,5 +1,6 @@
 const std = @import("std");
 const symbols = @import("symbols.zig").symbol_map;
+const build_options = @import("build_options");
 
 pub const BenchmarkData = struct {
     logic: ?[]const u8 = null,
