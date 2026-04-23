@@ -466,16 +466,16 @@ pub fn main() !u8 {
                             Errors.UnsupportedCmd;
                     },
                     else => {
-                        idx = try skip_rest_of_term(&tokenIt);
+                        // Unkown command, fail or do nothing
+                        if (build_options.benchmark_commands) {
+                            return Errors.NonBenchmarkCmd;
+                        } else {
+                            idx = try skip_rest_of_term(&tokenIt);
+                        }
                     },
                 }
             } else {
-                // Unkown command, fail or do nothing
-                if (build_options.benchmark_commands) {
-                    return Errors.NonBenchmarkCmd;
-                } else {
-                    idx = try skip_rest_of_term(&tokenIt);
-                }
+                idx = try skip_rest_of_term(&tokenIt);
             }
         } else {
             return Errors.OutOfTokens;
